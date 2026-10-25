@@ -35,4 +35,6 @@ Thumbs.db
 # Existing docs ignore
 docs/engineering
 development-log
-docs/product/use-cases.md
+docs/product/use-cases.md
+
+.superpowers
