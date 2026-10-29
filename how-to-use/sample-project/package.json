@@ -1,0 +1,7 @@
+{
+  "name": "sample-store-app",
+  "version": "1.0.0",
+  "description": "Sample TypeScript store project for testing DocAgent",
+  "main": "dist/index.js",
+  "type": "module"
+}
