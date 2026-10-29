@@ -1,3 +1,5 @@
+import type { ToolDefinition } from "../llm/types.js";
+
 export interface DocumentSection {
     id: string;
     title: string;
@@ -17,6 +19,8 @@ export interface GeneratedDocument {
 
 export interface GeneratorOptions {
     style?: "api-reference" | "architecture-overview" | "developer-guide";
+    tools?: ToolDefinition[];
+    toolExecutor?: (name: string, args: Record<string, any>) => Promise<string>;
 }
 
 export interface ReviseSectionOptions {

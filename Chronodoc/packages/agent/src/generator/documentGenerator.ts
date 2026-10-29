@@ -1,19 +1,24 @@
 import type { AssembledContext } from "../context/contextBuilder.js";
 import type { DocumentSection, GeneratedDocument, GeneratorOptions, ReviseSectionOptions } from "./types.js";
+import type { LLMClient, LLMMessage } from "../llm/types.js";
+import { MockLLMClient } from "../llm/client.js";
 
 export class DocumentGenerator {
     private provider: "openai" | "gemini" | "anthropic" | "mock";
     private apiKey?: string;
     private model: string;
+    private llmClient?: LLMClient;
 
     constructor(options: {
         provider?: "openai" | "gemini" | "anthropic" | "mock";
         apiKey?: string;
         model?: string;
+        llmClient?: LLMClient;
     } = {}) {
         this.provider = options.provider ?? "mock";
         this.apiKey = options.apiKey;
         this.model = options.model ?? "gpt-4o-mini";
+        this.llmClient = options.llmClient;
     }
 
     public async generate(
@@ -24,6 +29,56 @@ export class DocumentGenerator {
         const docId = `doc-${Date.now()}`;
         const symbolsList = context.symbols.map(s => s.name);
 
+        // If an LLM client and tool executor are available, run through the agentic tool-calling loop
+        if (this.llmClient) {
+            const systemPrompt = `You are Chronodoc Documentation Agent. Generate clear, structured markdown documentation for "${context.target}" in "${style}" style. Use available tools to lookup symbols or inspect file contents if needed.`;
+            const messages: LLMMessage[] = [
+                { role: "system", content: systemPrompt },
+                {
+                    role: "user",
+                    content: `Document target file: ${context.target}\nExported symbols: ${symbolsList.join(", ")}\nDependencies: ${context.dependencies.map(d => d.moduleSpecifier).join(", ")}`
+                }
+            ];
+
+            let cycleCount = 0;
+            const maxCycles = 5;
+            let finalContent = "";
+
+            while (cycleCount < maxCycles) {
+                cycleCount++;
+                const response = await this.llmClient.chat(messages, {
+                    tools: options.tools
+                });
+
+                if (response.toolCalls && response.toolCalls.length > 0 && options.toolExecutor) {
+                    // Record assistant message with tool calls
+                    messages.push({
+                        role: "assistant",
+                        content: response.content,
+                        toolCalls: response.toolCalls
+                    });
+
+                    // Execute each tool and feed back observations
+                    for (const tc of response.toolCalls) {
+                        const observation = await options.toolExecutor(tc.name, tc.arguments);
+                        messages.push({
+                            role: "tool",
+                            toolCallId: tc.id,
+                            content: observation
+                        });
+                    }
+                } else {
+                    finalContent = response.content;
+                    break;
+                }
+            }
+
+            if (finalContent && finalContent.trim().length > 0) {
+                return this.parseMarkdownIntoDocument(docId, context.target, style, finalContent, symbolsList);
+            }
+        }
+
+        // Fallback or default deterministic generation
         const sections: DocumentSection[] = [
             {
                 id: "overview",
@@ -75,6 +130,53 @@ export class DocumentGenerator {
             content: revisedContent,
             references: [options.targetFile],
             status: "revised"
+        };
+    }
+
+    private parseMarkdownIntoDocument(
+        docId: string,
+        target: string,
+        style: string,
+        markdown: string,
+        symbolsList: string[]
+    ): GeneratedDocument {
+        const sections: DocumentSection[] = [];
+        const rawSections = markdown.split(/\n(?=##\s+)/);
+
+        for (let i = 0; i < rawSections.length; i++) {
+            const raw = rawSections[i]?.trim();
+            if (!raw) continue;
+            const match = raw.match(/^##\s+(.+)$/m);
+            const title = match ? match[1].trim() : `Section ${i + 1}`;
+            const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+            const content = raw.replace(/^##\s+.+\n?/, "").trim();
+
+            sections.push({
+                id: id || `section-${i}`,
+                title,
+                content: content || raw,
+                references: [target, ...symbolsList.filter(s => raw.includes(s))],
+                status: "generated"
+            });
+        }
+
+        if (sections.length === 0) {
+            sections.push({
+                id: "overview",
+                title: "Module Overview",
+                content: markdown,
+                references: [target],
+                status: "generated"
+            });
+        }
+
+        return {
+            id: docId,
+            title: `Documentation: ${target}`,
+            style,
+            sections,
+            rawMarkdown: markdown,
+            generatedAt: new Date().toISOString()
         };
     }
 }
