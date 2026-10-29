@@ -5,21 +5,34 @@ export class MockLLMClient implements LLMClient {
     private turnIndex: number = 0;
 
     constructor(options: { turns?: LLMResponse[] } = {}) {
-        this.turns = options.turns ?? [
-            { content: "Mock LLM output response", toolCalls: [] }
-        ];
+        this.turns = options.turns ?? [];
     }
 
     public async chat(
-        _messages: LLMMessage[],
+        messages: LLMMessage[],
         _options?: { tools?: ToolDefinition[]; temperature?: number }
     ): Promise<LLMResponse> {
-        if (this.turnIndex >= this.turns.length) {
-            return this.turns[this.turns.length - 1] ?? { content: "Mock fallback response", toolCalls: [] };
+        if (this.turns.length > 0 && this.turnIndex < this.turns.length) {
+            const response = this.turns[this.turnIndex];
+            this.turnIndex++;
+            return response;
         }
-        const response = this.turns[this.turnIndex];
-        this.turnIndex++;
-        return response;
+
+        const userMsg = messages.find(m => m.role === "user")?.content ?? "";
+        return {
+            content: `## Module Overview
+
+This module is part of the Chronodoc architecture. It provides core functionality and manages component lifecycle.
+
+## Architecture & Integration
+
+Integrated into the repository pipeline. Analyzed context from codebase scanning.
+
+## API Reference
+
+Provides exported utilities and type signatures extracted directly from AST inspection.`,
+            toolCalls: []
+        };
     }
 }
 

@@ -63,6 +63,8 @@
                             "typescript":  "^5.9.3"
                         },
     "bin":  {
-                "chronodoc-agent":  "./dist/cli.js"
+                "chronodoc": "./dist/cli.js",
+                "doc": "./dist/cli.js",
+                "chronodoc-agent": "./dist/cli.js"
             }
 }

@@ -41,29 +41,42 @@ tryLoadEnv();
 
 async function main() {
     const args = process.argv.slice(2);
-    const command = args[0];
+    const firstArg = args[0];
 
-    if (!command || command === "--help" || command === "-h") {
+    if (!firstArg || firstArg === "--help" || firstArg === "-h") {
         console.log(`
-Chronodoc AI Agent CLI
-Usage:
-  chronodoc-agent scan [directory]
-  chronodoc-agent generate <file> [--root <dir>] [--style <style>] [--provider <provider>] [--out <dir>]
-  chronodoc-agent --version
+⚡ Chronodoc - Instant Codebase Documentation
+
+Simple Usage:
+  doc <file>                        Generate docs (saved to docs/generated/)
+  doc <file> -p mock                Test offline without API key
+  doc scan                          Scan files and symbols in current folder
+
+Full Options:
+  doc <file> [-o <outDir>] [-p <provider>] [-s <style>] [-r <rootDir>]
+
+Flags:
+  -o, --out       Destination directory (default: docs/generated)
+  -p, --provider  LLM provider: gemini | openai | mock (default: from .env)
+  -s, --style     Style: developer-guide | api-reference | architecture-overview
+  -r, --root      Root directory to scan (default: .)
+  -h, --help      Show help
+  -v, --version   Show version
 
 Examples:
-  npx @chronodoc/agent scan .
-  npx @chronodoc/agent generate src/index.ts --out docs/generated
+  doc src/index.ts
+  doc src/server.ts -o docs/api
+  doc src/app.ts -p gemini
         `);
         process.exit(0);
     }
 
-    if (command === "--version" || command === "-v") {
+    if (firstArg === "--version" || firstArg === "-v") {
         console.log("1.0.0");
         process.exit(0);
     }
 
-    if (command === "scan") {
+    if (firstArg === "scan") {
         const rootDir = args[1] || ".";
         console.log(`Scanning repository at: ${rootDir}...`);
         const result = await scanRepository(rootDir);
@@ -74,65 +87,76 @@ Examples:
         process.exit(result.complete ? 0 : 1);
     }
 
-    if (command === "generate") {
-        const targetFile = args[1];
-        if (!targetFile || targetFile.startsWith("--")) {
-            console.error("Error: target file required. Example: chronodoc-agent generate src/app.ts");
-            process.exit(1);
-        }
+    // Determine target file: user can type "doc generate <file>" or simply "doc <file>"
+    let targetFile = firstArg === "generate" ? args[1] : firstArg;
+    const startIndex = firstArg === "generate" ? 2 : 1;
 
-        // Parse optional CLI flags
-        let rootDir = ".";
-        let outDir: string | undefined = undefined;
-        let provider: "openai" | "gemini" | "anthropic" | "mock" | undefined = undefined;
-        let style: "api-reference" | "architecture-overview" | "developer-guide" | undefined = undefined;
-
-        for (let i = 2; i < args.length; i++) {
-            if (args[i] === "--root" && args[i + 1]) rootDir = args[++i];
-            if (args[i] === "--out" && args[i + 1]) outDir = args[++i];
-            if (args[i] === "--provider" && args[i + 1]) provider = args[++i] as any;
-            if (args[i] === "--style" && args[i + 1]) style = args[++i] as any;
-        }
-
-        const config = loadConfig(provider ? { llmProvider: provider } : {});
-        const activeApiKey = config.llmProvider === "gemini" 
-            ? config.geminiApiKey 
-            : (config.llmProvider === "openai" ? config.openaiApiKey : undefined);
-
-        const orchestrator = new PipelineOrchestrator({
-            provider: config.llmProvider,
-            apiKey: activeApiKey,
-            model: config.llmModel,
-            tokenBudget: config.tokenBudget,
-            maxRevisionAttempts: config.maxRevisionAttempts
-        });
-
-        console.log(`Generating documentation for ${targetFile} [Provider: ${config.llmProvider}]...`);
-        const result = await orchestrator.execute({
-            target: targetFile,
-            rootDir,
-            style,
-            outDir
-        });
-
-        console.log(`\nPipeline status: ${result.status.toUpperCase()}`);
-        console.log(`Revision attempts: ${result.revisionAttempts}`);
-        if (result.savedFilePath) {
-            console.log(`Documentation saved to: ${result.savedFilePath}`);
-        }
-        console.log(`\nGenerated Output:\n-------------------\n`);
-        console.log(result.document.rawMarkdown);
-
-        if (result.status === "unapproved" && result.unresolvedIssues) {
-            console.warn("\nUnresolved Issues:");
-            result.unresolvedIssues.forEach(i => console.warn(`- [${i.sectionId}] ${i.type}: ${i.message}`));
-        }
-
-        process.exit(result.status === "validated" ? 0 : 2);
+    if (!targetFile || targetFile.startsWith("-")) {
+        console.error("Error: target file required. Example: doc src/app.ts");
+        process.exit(1);
     }
 
-    console.error(`Unknown command: ${command}. Run "chronodoc-agent --help" for options.`);
-    process.exit(1);
+    // Default out directory to docs/generated so users don't need to specify it
+    let outDir: string = "docs/generated";
+    let rootDir: string = ".";
+    let provider: "openai" | "gemini" | "anthropic" | "mock" | undefined = undefined;
+    let style: "api-reference" | "architecture-overview" | "developer-guide" | undefined = undefined;
+
+    for (let i = startIndex; i < args.length; i++) {
+        const arg = args[i];
+        const next = args[i + 1];
+
+        if ((arg === "--root" || arg === "-r") && next) {
+            rootDir = next;
+            i++;
+        } else if ((arg === "--out" || arg === "-o") && next) {
+            outDir = next;
+            i++;
+        } else if ((arg === "--provider" || arg === "-p") && next) {
+            provider = next as any;
+            i++;
+        } else if ((arg === "--style" || arg === "-s") && next) {
+            style = next as any;
+            i++;
+        }
+    }
+
+    const config = loadConfig(provider ? { llmProvider: provider } : {});
+    const activeApiKey = config.llmProvider === "gemini" 
+        ? config.geminiApiKey 
+        : (config.llmProvider === "openai" ? config.openaiApiKey : undefined);
+
+    const orchestrator = new PipelineOrchestrator({
+        provider: config.llmProvider,
+        apiKey: activeApiKey,
+        model: config.llmModel,
+        tokenBudget: config.tokenBudget,
+        maxRevisionAttempts: config.maxRevisionAttempts
+    });
+
+    console.log(`\n📄 Documenting: ${targetFile} [Provider: ${config.llmProvider}]`);
+    const result = await orchestrator.execute({
+        target: targetFile,
+        rootDir,
+        style,
+        outDir
+    });
+
+    console.log(`✔ Pipeline Status: ${result.status.toUpperCase()}`);
+    console.log(`✔ Revision Attempts: ${result.revisionAttempts}`);
+    if (result.savedFilePath) {
+        console.log(`📁 Saved to: ${result.savedFilePath}`);
+    }
+    console.log(`\n----------------- PREVIEW -----------------\n`);
+    console.log(result.document.rawMarkdown);
+    console.log(`-------------------------------------------\n`);
+
+    if (result.status === "unapproved" && result.unresolvedIssues) {
+        console.warn("\n⚠️ Unresolved Issues:");
+        result.unresolvedIssues.forEach(issue => console.warn(`- [${issue.sectionId}] ${issue.type}: ${issue.message}`));
+    }
+
+    process.exit(result.status === "validated" ? 0 : 2);
 }
 
 main().catch(err => {
