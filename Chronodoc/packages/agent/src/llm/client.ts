@@ -117,8 +117,9 @@ export class GeminiLLMClient implements LLMClient {
 
     constructor(options: { apiKey: string; model?: string }) {
         this.apiKey = options.apiKey;
-        this.model = options.model ?? "gemini-1.5-flash";
+        this.model = options.model ?? "gemini-3.8-flash";
     }
+
 
     public async chat(
         messages: LLMMessage[],
@@ -150,32 +151,56 @@ export class GeminiLLMClient implements LLMClient {
             }];
         }
 
-        const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(bodyPayload)
-        });
+        const maxRetries = 3;
+        let lastError: Error | null = null;
 
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(`Gemini API request failed (${res.status}): ${errText}`);
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            if (attempt > 0) {
+                await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+            }
+
+            try {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(bodyPayload)
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    if ((res.status === 503 || res.status === 429) && attempt < maxRetries - 1) {
+                        lastError = new Error(`Gemini API request failed (${res.status}): ${errText}`);
+                        continue;
+                    }
+                    throw new Error(`Gemini API request failed (${res.status}): ${errText}`);
+                }
+
+                const data = (await res.json()) as any;
+                const candidate = data.candidates?.[0]?.content;
+                const textParts = candidate?.parts?.filter((p: any) => p.text).map((p: any) => p.text).join("") ?? "";
+                const funcCalls = candidate?.parts?.filter((p: any) => p.functionCall).map((p: any, idx: number) => ({
+                    id: `gemini_call_${idx}`,
+                    name: p.functionCall.name,
+                    arguments: p.functionCall.args || {}
+                }));
+
+                return {
+                    content: textParts,
+                    toolCalls: funcCalls && funcCalls.length > 0 ? funcCalls : undefined
+                };
+            } catch (err: any) {
+                lastError = err;
+                if (attempt < maxRetries - 1 && (err.message.includes("503") || err.message.includes("fetch failed"))) {
+                    continue;
+                }
+                throw err;
+            }
         }
 
-        const data = (await res.json()) as any;
-        const candidate = data.candidates?.[0]?.content;
-        const textParts = candidate?.parts?.filter((p: any) => p.text).map((p: any) => p.text).join("") ?? "";
-        const funcCalls = candidate?.parts?.filter((p: any) => p.functionCall).map((p: any, idx: number) => ({
-            id: `gemini_call_${idx}`,
-            name: p.functionCall.name,
-            arguments: p.functionCall.args || {}
-        }));
-
-        return {
-            content: textParts,
-            toolCalls: funcCalls && funcCalls.length > 0 ? funcCalls : undefined
-        };
+        throw lastError ?? new Error("Gemini API request failed after retries");
     }
 }
+
 
 export class AnthropicLLMClient implements LLMClient {
     private apiKey: string;

@@ -315,6 +315,18 @@ program
             cwd: process.cwd(),
             explicitRoot: cmdOptions.root === "." ? undefined : cmdOptions.root
         });
+
+        const fullTarget = path.resolve(resolvedRoot, file);
+        if (fs.existsSync(fullTarget) && fs.statSync(fullTarget).isDirectory()) {
+            ui.printError({
+                operation: "Document Generation",
+                failure: `'${file}' is a directory, not a source file`,
+                reason: "DocAgent generates documentation for specific source files (e.g. .ts, .tsx, .js)",
+                nextAction: "Provide a specific file path, e.g. 'docagent generate src/index.ts'"
+            });
+            process.exit(1);
+        }
+
         const config = loadConfig(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {});
 
         const activeApiKey = config.llmProvider === "gemini"
@@ -322,6 +334,7 @@ program
             : (config.llmProvider === "openai"
                 ? config.openaiApiKey
                 : (config.llmProvider === "anthropic" ? config.anthropicApiKey : undefined));
+
 
         if (!globalOpts.json) {
             ui.printHeader({
