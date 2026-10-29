@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import pc from "picocolors";
 import { Command } from "commander";
 import { scanRepository } from "./scanner/scanRepository.js";
 import { PipelineOrchestrator } from "./orchestrator/pipelineOrchestrator.js";
 import { loadConfig } from "./config/env.js";
 import { TerminalUI } from "./cli/ui.js";
 import { executeInitCommand, executeValidateCommand } from "./cli/commands.js";
+import { SUPPORTED_PROVIDERS, maskApiKey } from "./cli/prompts.js";
 
 // Auto-discover local env file if present
 function tryLoadEnv() {
@@ -59,8 +61,14 @@ program
 // 1. Init Command
 program
     .command("init")
-    .description("Initialize DocAgent environment and starter configuration")
+    .alias("configure")
+    .alias("config")
+    .description("Initialize DocAgent environment and configure AI provider")
     .option("-r, --root <dir>", "Project root directory", ".")
+    .option("-p, --provider <provider>", "AI provider: openai | anthropic | gemini | mock")
+    .option("-k, --api-key <key>", "API key for the selected provider")
+    .option("-f, --force", "Overwrite existing configuration", false)
+    .option("--non-interactive", "Run in non-interactive mode without prompting", false)
     .action(async (cmdOptions) => {
         const globalOpts = program.opts();
         const ui = new TerminalUI({
@@ -69,17 +77,28 @@ program
             verbose: globalOpts.verbose
         });
 
+        const isInteractive = Boolean(
+            process.stdin.isTTY &&
+            !cmdOptions.nonInteractive &&
+            !globalOpts.json &&
+            !cmdOptions.provider
+        );
+
         const startTime = Date.now();
-        if (!globalOpts.json) {
-            ui.printHeader({
-                project: path.basename(path.resolve(cmdOptions.root)),
-                output: "./env/.env"
-            });
-            ui.startStage("Initializing project configuration");
-        }
 
         try {
-            const result = await executeInitCommand({ rootDir: cmdOptions.root });
+            const result = await executeInitCommand({
+                rootDir: cmdOptions.root,
+                interactive: isInteractive,
+                provider: cmdOptions.provider,
+                apiKey: cmdOptions.apiKey,
+                force: cmdOptions.force
+            });
+
+            if (result.cancelled) {
+                process.exit(0);
+            }
+
             const duration = Date.now() - startTime;
 
             if (globalOpts.json) {
@@ -87,17 +106,16 @@ program
                 process.exit(0);
             }
 
-            ui.completeStage("Configuration initialized");
-            ui.printSummary({
-                documentsCreated: result.createdFiles.length,
-                validationStatus: "Passed",
-                outputDirectory: "./env",
-                durationMs: duration,
-                nextSteps: [
-                    "Configure your API key in env/.env",
-                    "Run 'docagent generate <file>' to generate documentation"
-                ]
-            });
+            const providerMeta = SUPPORTED_PROVIDERS.find(p => p.value === result.provider);
+            const providerName = providerMeta?.label ?? result.provider ?? "Gemini";
+
+            console.log("\n" + pc.green(pc.bold("✔ Provider configured successfully!")));
+            console.log(`  ${pc.dim("Provider:")}      ${pc.bold(providerName)}`);
+            console.log(`  ${pc.dim("Configuration:")} ${path.join(cmdOptions.root, "env/.env")}`);
+            console.log(`  ${pc.dim("Credentials:")}   ${result.provider === "mock" ? pc.dim("(Mock mode - no API key needed)") : pc.green("(Saved securely)")}`);
+            console.log("\n  " + pc.bold("Next steps:"));
+            console.log(`    ${pc.cyan("→")} Run 'docagent generate <file>' to generate documentation\n`);
+
             process.exit(0);
         } catch (err: any) {
             if (globalOpts.json) {
@@ -106,14 +124,15 @@ program
             }
 
             ui.printError({
-                operation: "Project Initialization",
-                failure: "Failed to create configuration",
+                operation: "Project Configuration",
+                failure: "Failed to configure provider",
                 reason: err.message,
-                nextAction: "Verify file permissions in the working directory"
+                nextAction: "Verify file permissions or run with --non-interactive"
             });
             process.exit(1);
         }
     });
+
 
 // 2. Scan Command
 program
@@ -263,7 +282,7 @@ program
     .description("Generate verified, grounded technical documentation for a target file")
     .option("-r, --root <dir>", "Repository root directory", ".")
     .option("-o, --out <dir>", "Destination directory", "docs/generated")
-    .option("-p, --provider <provider>", "LLM provider: gemini | openai | mock")
+    .option("-p, --provider <provider>", "LLM provider: gemini | openai | anthropic | mock")
     .option("-s, --style <style>", "Documentation style: developer-guide | api-reference | architecture-overview")
     .action(async (file, cmdOptions) => {
         const globalOpts = program.opts();
@@ -279,7 +298,9 @@ program
 
         const activeApiKey = config.llmProvider === "gemini"
             ? config.geminiApiKey
-            : (config.llmProvider === "openai" ? config.openaiApiKey : undefined);
+            : (config.llmProvider === "openai"
+                ? config.openaiApiKey
+                : (config.llmProvider === "anthropic" ? config.anthropicApiKey : undefined));
 
         if (!globalOpts.json) {
             ui.printHeader({

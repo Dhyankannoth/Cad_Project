@@ -69,6 +69,7 @@
         "chronodoc-agent": "./dist/cli.js"
     },
     "dependencies": {
+        "@clack/prompts": "^1.8.1",
         "commander": "^15.0.0",
         "ora": "^9.4.1",
         "picocolors": "^1.1.1"
