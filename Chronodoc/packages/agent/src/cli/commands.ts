@@ -4,11 +4,24 @@ import { scanRepository, buildScanIndex } from "../scanner/scanRepository.js";
 import { DocumentValidator } from "../validator/documentValidator.js";
 import type { GeneratedDocument, DocumentSection } from "../generator/types.js";
 import type { ValidationIssue } from "../validator/types.js";
+import type { InteractivePromptHandler } from "./prompts.js";
+import { ClackPromptHandler, SUPPORTED_PROVIDERS } from "./prompts.js";
+
+export interface InitOptions {
+    rootDir?: string;
+    interactive?: boolean;
+    provider?: "gemini" | "openai" | "anthropic" | "mock";
+    apiKey?: string;
+    force?: boolean;
+    promptHandler?: InteractivePromptHandler;
+}
 
 export interface InitResult {
     success: boolean;
     createdFiles: string[];
     alreadyExisted: string[];
+    provider?: "gemini" | "openai" | "anthropic" | "mock";
+    cancelled?: boolean;
 }
 
 export interface ValidateResult {
@@ -19,7 +32,7 @@ export interface ValidateResult {
     error?: string;
 }
 
-export async function executeInitCommand(options: { rootDir?: string } = {}): Promise<InitResult> {
+export async function executeInitCommand(options: InitOptions = {}): Promise<InitResult> {
     const root = path.resolve(options.rootDir ?? ".");
     const envDir = path.join(root, "env");
     const envFile = path.join(envDir, ".env");
@@ -29,36 +42,94 @@ export async function executeInitCommand(options: { rootDir?: string } = {}): Pr
 
     await fs.mkdir(envDir, { recursive: true });
 
+    let provider = options.provider;
+    let apiKey = options.apiKey;
+
+    if (options.interactive) {
+        const handler = options.promptHandler ?? new ClackPromptHandler();
+        if (!provider) {
+            const selected = await handler.selectProvider();
+            if (!selected) {
+                return {
+                    success: false,
+                    cancelled: true,
+                    createdFiles: [],
+                    alreadyExisted: []
+                };
+            }
+            provider = selected;
+        }
+
+        if (provider !== "mock" && !apiKey) {
+            const enteredKey = await handler.promptApiKey(provider);
+            if (enteredKey === null) {
+                return {
+                    success: false,
+                    cancelled: true,
+                    createdFiles: [],
+                    alreadyExisted: []
+                };
+            }
+            apiKey = enteredKey;
+        }
+    }
+
+    let fileExisted = false;
     try {
         await fs.access(envFile);
-        alreadyExisted.push("env/.env");
+        fileExisted = true;
     } catch {
-        const template = `# ==============================================================================
+        fileExisted = false;
+    }
+
+    // Preserve existing file if non-interactive and no specific configuration was requested
+    if (fileExisted && !options.force && !options.interactive && !options.provider) {
+        alreadyExisted.push("env/.env");
+        return {
+            success: true,
+            createdFiles,
+            alreadyExisted,
+            provider: provider ?? "gemini"
+        };
+    }
+
+    const activeProvider = provider ?? "gemini";
+    const meta = SUPPORTED_PROVIDERS.find(p => p.value === activeProvider);
+    const defaultModel = meta?.defaultModel ?? "gemini-1.5-flash";
+
+    const template = `# ==============================================================================
 # DocAgent - Environment Configuration
 # ==============================================================================
 
-# Primary LLM Provider: "gemini" | "openai" | "mock"
-LLM_PROVIDER=gemini
+# Primary LLM Provider: "openai" | "anthropic" | "gemini" | "mock"
+LLM_PROVIDER=${activeProvider}
 
-# Provider API Credentials (uncomment and fill your key)
-GEMINI_API_KEY=
-# OPENAI_API_KEY=
+# Provider API Credentials
+${activeProvider === "gemini" ? `GEMINI_API_KEY=${apiKey ?? ""}` : "# GEMINI_API_KEY="}
+${activeProvider === "openai" ? `OPENAI_API_KEY=${apiKey ?? ""}` : "# OPENAI_API_KEY="}
+${activeProvider === "anthropic" ? `ANTHROPIC_API_KEY=${apiKey ?? ""}` : "# ANTHROPIC_API_KEY="}
 
 # Model Overrides
-LLM_MODEL=gemini-1.5-flash
-# LLM_MODEL=gpt-4o-mini
+LLM_MODEL=${defaultModel}
 LLM_TEMPERATURE=0.2
 `;
-        await fs.writeFile(envFile, template, "utf-8");
+
+    await fs.writeFile(envFile, template, "utf-8");
+
+    if (fileExisted) {
+        alreadyExisted.push("env/.env");
+    } else {
         createdFiles.push("env/.env");
     }
 
     return {
         success: true,
         createdFiles,
-        alreadyExisted
+        alreadyExisted,
+        provider: activeProvider
     };
 }
+
 
 export async function executeValidateCommand(options: {
     docPath: string;
