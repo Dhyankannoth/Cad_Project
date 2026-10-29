@@ -27,7 +27,8 @@ export class DocumentGenerator {
     ): Promise<GeneratedDocument> {
         const style = options.style ?? "developer-guide";
         const docId = `doc-${Date.now()}`;
-        const symbolsList = context.symbols.map(s => s.name);
+        const symbolsList = (context.symbols ?? []).map(s => s.name);
+        const filesList = (context.files ?? []).map(f => f.path);
 
         // If an LLM client and tool executor are available, run through the agentic tool-calling loop
         if (this.llmClient) {
@@ -36,7 +37,7 @@ export class DocumentGenerator {
                 { role: "system", content: systemPrompt },
                 {
                     role: "user",
-                    content: `Document target file: ${context.target}\nExported symbols: ${symbolsList.join(", ")}\nDependencies: ${context.dependencies.map(d => d.moduleSpecifier).join(", ")}`
+                    content: `Document target file: ${context.target}\nExported symbols: ${symbolsList.join(", ")}\nRelated files: ${filesList.join(", ")}`
                 }
             ];
 

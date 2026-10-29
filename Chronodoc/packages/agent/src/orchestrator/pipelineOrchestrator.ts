@@ -1,18 +1,26 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { buildScanIndex } from "../scanner/scanRepository.js";
 import { HybridRetriever } from "../retrieval/hybridRetriever.js";
 import { buildContext } from "../context/contextBuilder.js";
 import { DocumentGenerator } from "../generator/documentGenerator.js";
 import { DocumentValidator } from "../validator/documentValidator.js";
 import { RevisionAgent } from "./revisionAgent.js";
+import { createRepositoryTools } from "../tools/repoTools.js";
+import { createLLMClient } from "../llm/client.js";
 import type { GeneratedDocument } from "../generator/types.js";
 import type { ValidationIssue, ValidationResult } from "../validator/types.js";
 import type { RepositoryScanIndex } from "../scanner/astExtractor.js";
+import type { LLMClient } from "../llm/types.js";
 
 export interface PipelineOptions {
     maxRevisionAttempts?: number;
     alwaysFailValidation?: boolean;
     provider?: "openai" | "gemini" | "anthropic" | "mock";
+    apiKey?: string;
+    model?: string;
     tokenBudget?: number;
+    llmClient?: LLMClient;
 }
 
 export interface PipelineResult {
@@ -21,6 +29,7 @@ export interface PipelineResult {
     revisionAttempts: number;
     validationHistory: ValidationResult[];
     unresolvedIssues?: ValidationIssue[];
+    savedFilePath?: string;
 }
 
 export class PipelineOrchestrator {
@@ -35,7 +44,26 @@ export class PipelineOrchestrator {
         this.maxRevisionAttempts = options.maxRevisionAttempts ?? 2;
         this.alwaysFailValidation = options.alwaysFailValidation ?? false;
         this.tokenBudget = options.tokenBudget ?? 8000;
-        this.generator = new DocumentGenerator({ provider: options.provider ?? "mock" });
+
+        let client = options.llmClient;
+        if (!client) {
+            try {
+                client = createLLMClient({
+                    provider: options.provider ?? "mock",
+                    apiKey: options.apiKey,
+                    model: options.model
+                });
+            } catch {
+                client = undefined;
+            }
+        }
+
+        this.generator = new DocumentGenerator({
+            provider: options.provider ?? "mock",
+            apiKey: options.apiKey,
+            model: options.model,
+            llmClient: client
+        });
         this.validator = new DocumentValidator();
         this.revisionAgent = new RevisionAgent(this.generator);
     }
@@ -44,8 +72,9 @@ export class PipelineOrchestrator {
         target: string;
         rootDir: string;
         style?: "api-reference" | "architecture-overview" | "developer-guide";
+        outDir?: string;
     }): Promise<PipelineResult> {
-        const { target, rootDir, style } = params;
+        const { target, rootDir, style, outDir } = params;
 
         // 1. Scan Repository
         let scanIndex: RepositoryScanIndex;
@@ -75,12 +104,20 @@ export class PipelineOrchestrator {
             docStyle: style
         });
 
-        // 4. Initial Document Generation
-        let currentDoc = await this.generator.generate(assembledContext, { style });
+        // 4. Provision local deterministic tools
+        const { tools, executeTool } = createRepositoryTools(rootDir, scanIndex);
+
+        // 5. Initial Document Generation with tool execution capability
+        let currentDoc = await this.generator.generate(assembledContext, {
+            style,
+            tools,
+            toolExecutor: executeTool
+        });
+
         const validationHistory: ValidationResult[] = [];
         let attempts = 0;
 
-        // 5. Validation and Targeted Revision Loop
+        // 6. Validation and Targeted Revision Loop
         while (attempts <= this.maxRevisionAttempts) {
             let validation: ValidationResult;
 
@@ -102,25 +139,27 @@ export class PipelineOrchestrator {
             validationHistory.push(validation);
 
             if (validation.passed) {
-                // Final Document-Level Validation: mark all sections approved
                 currentDoc.sections.forEach(s => s.status = "approved");
+                const savedFilePath = outDir ? await this.saveDocumentation(currentDoc, target, outDir) : undefined;
                 return {
                     status: "validated",
                     document: currentDoc,
                     revisionAttempts: attempts,
                     validationHistory,
+                    savedFilePath
                 };
             }
 
             if (attempts >= this.maxRevisionAttempts) {
-                // Retry limit reached: retain as unapproved draft with report
                 currentDoc.sections.forEach(s => s.status = "unapproved");
+                const savedFilePath = outDir ? await this.saveDocumentation(currentDoc, target, outDir) : undefined;
                 return {
                     status: "unapproved",
                     document: currentDoc,
                     revisionAttempts: attempts,
                     validationHistory,
-                    unresolvedIssues: validation.issues
+                    unresolvedIssues: validation.issues,
+                    savedFilePath
                 };
             }
 
@@ -131,12 +170,22 @@ export class PipelineOrchestrator {
 
         // Fallback safety
         currentDoc.sections.forEach(s => s.status = "unapproved");
+        const savedFilePath = outDir ? await this.saveDocumentation(currentDoc, target, outDir) : undefined;
         return {
             status: "unapproved",
             document: currentDoc,
             revisionAttempts: attempts,
             validationHistory,
-            unresolvedIssues: validationHistory[validationHistory.length - 1]?.issues
+            unresolvedIssues: validationHistory[validationHistory.length - 1]?.issues,
+            savedFilePath
         };
+    }
+
+    private async saveDocumentation(doc: GeneratedDocument, target: string, outDir: string): Promise<string> {
+        await fs.mkdir(outDir, { recursive: true });
+        const cleanName = path.basename(target).replace(/[^a-zA-Z0-9_-]/g, "_");
+        const destPath = path.join(outDir, `${cleanName}.md`);
+        await fs.writeFile(destPath, doc.rawMarkdown, "utf-8");
+        return destPath;
     }
 }

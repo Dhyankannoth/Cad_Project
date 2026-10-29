@@ -93,7 +93,7 @@ export function createRepositoryTools(rootDir: string, scanIndex: RepositoryScan
         if (name === "findReferences") {
             const q = args.query;
             const matchedDeps = scanIndex.dependencies.filter(
-                d => d.sourceFile.includes(q) || d.moduleSpecifier.includes(q) || d.importedSymbols.includes(q)
+                d => d.fromFile.includes(q) || d.toFileOrModule.includes(q) || d.importedSymbols.includes(q)
             );
             return JSON.stringify({
                 query: q,

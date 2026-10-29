@@ -1,6 +1,13 @@
 // Configuration & Environment
 export * from "./config/env.js";
 
+// LLM Abstraction & Providers
+export * from "./llm/types.js";
+export * from "./llm/client.js";
+
+// Repository Tools
+export * from "./tools/repoTools.js";
+
 // Scanner & AST Extraction
 export * from "./scanner/astExtractor.js";
 export * from "./scanner/scanRepository.js";
