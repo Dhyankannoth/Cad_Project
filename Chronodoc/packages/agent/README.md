@@ -1,84 +1,79 @@
-# @chronodoc/agent
+# DocAgent (`@chronodoc/agent`)
 
-> AI Documentation Agent with Hybrid RAG, AST Grounding, Native Tool Calling, and Bounded Self-Revision.
+> **Your codebase, documented.**
+> AI-powered, AST-grounded technical documentation with hybrid RAG, local tool execution, and deterministic verification.
 
-`@chronodoc/agent` scans your codebase, extracts AST symbols and dependencies, performs hybrid retrieval, and uses an autonomous agent with local repository tools to generate verified, section-based technical documentation.
+DocAgent analyzes your codebase, extracts AST declarations and dependency graphs, and runs a bounded generation and validation loop to produce verified, high-quality technical documentation.
 
 ---
 
-## ⚡ Quickstart (Zero Installation)
+## ⚡ Quickstart
 
-Generate documentation for any file in your codebase using `npx`:
+Generate documentation for any file in your project using `npx`:
 
 ```bash
-# Scan repository files
-npx @chronodoc/agent scan .
+# Initialize configuration (creates env/.env template)
+npx @chronodoc/agent init
 
-# Generate documentation for a specific file
+# Generate documentation for a target source file
 npx @chronodoc/agent generate src/index.ts
 
-# Generate and save directly to your documentation folder
-npx @chronodoc/agent generate src/index.ts --out docs/generated
+# Test offline with mock provider (no API key required)
+npx @chronodoc/agent generate src/index.ts -p mock
+
+# Validate an existing document against the current codebase AST
+npx @chronodoc/agent validate docs/generated/index_ts.md
 ```
 
 ---
 
-## 📦 Installation
+## 📦 Global Installation
 
-Install globally for CLI use:
 ```bash
 npm install -g @chronodoc/agent
 ```
 
-Or add to your project dependencies:
+Once installed, use the short `docagent` command:
+
 ```bash
-npm install @chronodoc/agent
+docagent init
+docagent generate src/server.ts
+docagent validate docs/generated/server_ts.md
 ```
 
 ---
 
-## 🔑 Configuration
+## 🛠️ Commands & Options
 
-Chronodoc automatically loads environment variables from `env/.env` or `.env`.
+```text
+Usage: docagent [options] [command]
 
-Set your preferred provider and API key:
-
-```env
-# Primary LLM Provider: "openai" | "gemini" | "mock"
-LLM_PROVIDER=gemini
-
-# API Key
-GEMINI_API_KEY=your_gemini_api_key_here
-# or
-OPENAI_API_KEY=your_openai_api_key_here
-
-# Optional Model Overrides
-LLM_MODEL=gemini-1.5-flash
-```
-
----
-
-## 🛠️ CLI Usage
-
-```bash
-# Scan supported code files and AST dependencies
-chronodoc-agent scan [directory]
-
-# Generate documentation
-chronodoc-agent generate <file> [options]
+Your codebase, documented.
 
 Options:
-  --root <dir>           Repository root directory (default: current directory)
-  --out <dir>            Directory where generated markdown should be saved
-  --provider <provider>  "gemini" | "openai" | "mock"
-  --style <style>        "developer-guide" | "api-reference" | "architecture-overview"
-  --help, -h             Show CLI options
-  --version, -v          Show version
+  -V, --version                 Output version number
+  --no-color                    Disable colored terminal output
+  --quiet                       Suppress non-essential messages
+  --verbose                     Show detailed diagnostic stack traces
+  --json                        Output machine-readable JSON results
+  -h, --help                    Display help
+
+Commands:
+  init [options]                Initialize DocAgent environment configuration
+  scan [directory]              Scan repository files, AST symbols, and dependencies
+  generate [options] <file>     Generate verified technical documentation (default)
+  validate [options] <docFile>  Validate existing markdown against codebase AST
 ```
+
+### Command Flags:
+- `-o, --out <dir>`: Destination directory (defaults to `docs/generated`)
+- `-p, --provider <provider>`: LLM provider: `gemini` | `openai` | `mock`
+- `-s, --style <style>`: `developer-guide` | `api-reference` | `architecture-overview`
+- `-r, --root <dir>`: Repository root directory (default: `.`)
 
 ---
 
-## 💻 Programmatic Usage (Node.js & TypeScript)
+## 💻 Programmatic API (TypeScript & Node.js)
 
 ```typescript
 import { PipelineOrchestrator, loadConfig } from "@chronodoc/agent";
@@ -92,24 +87,24 @@ const orchestrator = new PipelineOrchestrator({
 });
 
 const result = await orchestrator.execute({
-    target: "src/server.ts",
+    target: "src/scanner/astExtractor.ts",
     rootDir: ".",
     style: "developer-guide",
-    outDir: "docs/api"
+    outDir: "docs/generated"
 });
 
-console.log(`Status: ${result.status}`);
-console.log(`Output:\n${result.document.rawMarkdown}`);
+console.log(`Status: ${result.status}`); // "validated" | "unapproved"
+console.log(`Saved to: ${result.savedFilePath}`);
 ```
 
 ---
 
 ## 🛡️ Architecture & Verification
 
-- **AST Symbol Grounding**: Uses the official TypeScript compiler API to extract real types, signatures, and imports.
-- **Native Tool Calling**: Equipped with local repository inspection tools (`astLookup`, `readFileSlice`, `findReferences`).
-- **Deterministic Validation**: Catches non-existent symbols and broken file paths before approval.
-- **Bounded Self-Revision**: Enforces strict revision limits (max 2 attempts) to guarantee cost-predictable execution without infinite loops.
+1. **AST Grounding**: Extracts real types, function parameters, interfaces, and imports using TypeScript's official Compiler API.
+2. **Native Tool Calling**: Equips LLMs with local read-only repository tools (`astLookup`, `readFileSlice`, `findReferences`) to inspect code logic without token overflow.
+3. **Deterministic Validation**: Catches hallucinated symbol names, broken file references, and markdown hierarchy violations before approval.
+4. **Bounded Self-Revision**: Limits automated revisions to a maximum of 2 cycles on affected sections only.
 
 ---
 

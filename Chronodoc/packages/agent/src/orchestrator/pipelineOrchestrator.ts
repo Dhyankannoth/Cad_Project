@@ -13,6 +13,12 @@ import type { ValidationIssue, ValidationResult } from "../validator/types.js";
 import type { RepositoryScanIndex } from "../scanner/astExtractor.js";
 import type { LLMClient } from "../llm/types.js";
 
+export interface ProgressEvent {
+    stage: "scanning" | "retrieval" | "context" | "generation" | "validation" | "revision" | "writing";
+    status: "started" | "completed" | "failed";
+    message: string;
+}
+
 export interface PipelineOptions {
     maxRevisionAttempts?: number;
     alwaysFailValidation?: boolean;
@@ -21,6 +27,7 @@ export interface PipelineOptions {
     model?: string;
     tokenBudget?: number;
     llmClient?: LLMClient;
+    onProgress?: (event: ProgressEvent) => void;
 }
 
 export interface PipelineResult {
@@ -39,11 +46,13 @@ export class PipelineOrchestrator {
     private validator: DocumentValidator;
     private revisionAgent: RevisionAgent;
     private tokenBudget: number;
+    private onProgress?: (event: ProgressEvent) => void;
 
     constructor(options: PipelineOptions = {}) {
         this.maxRevisionAttempts = options.maxRevisionAttempts ?? 2;
         this.alwaysFailValidation = options.alwaysFailValidation ?? false;
         this.tokenBudget = options.tokenBudget ?? 8000;
+        this.onProgress = options.onProgress;
 
         let client = options.llmClient;
         if (!client) {
@@ -73,13 +82,17 @@ export class PipelineOrchestrator {
         rootDir: string;
         style?: "api-reference" | "architecture-overview" | "developer-guide";
         outDir?: string;
+        onProgress?: (event: ProgressEvent) => void;
     }): Promise<PipelineResult> {
         const { target, rootDir, style, outDir } = params;
+        const notify = params.onProgress ?? this.onProgress;
 
         // 1. Scan Repository
+        notify?.({ stage: "scanning", status: "started", message: "Repository scanning" });
         let scanIndex: RepositoryScanIndex;
         try {
             scanIndex = await buildScanIndex(rootDir);
+            notify?.({ stage: "scanning", status: "completed", message: `Repository scanning: ${scanIndex.files.length} files discovered` });
         } catch {
             scanIndex = {
                 files: [target],
@@ -88,36 +101,44 @@ export class PipelineOrchestrator {
                 warnings: [],
                 complete: true
             };
+            notify?.({ stage: "scanning", status: "completed", message: "Repository scanning (single target fallback)" });
         }
 
         // 2. Hybrid RAG Retrieval
+        notify?.({ stage: "retrieval", status: "started", message: "Hybrid retrieval (AST + Lexical + Semantic)" });
         const retriever = new HybridRetriever({ mockSemantic: true });
         retriever.indexCorpus(
             scanIndex.files.map(f => ({ filePath: f, content: `// File content for ${f}` })),
             scanIndex
         );
         const retrievedItems = await retriever.search(target);
+        notify?.({ stage: "retrieval", status: "completed", message: `Hybrid retrieval: ${retrievedItems.length} context items retrieved` });
 
         // 3. Context Building
+        notify?.({ stage: "context", status: "started", message: "Context preparation & token budgeting" });
         const assembledContext = buildContext(target, retrievedItems, {
             tokenBudget: this.tokenBudget,
             docStyle: style
         });
+        notify?.({ stage: "context", status: "completed", message: `Context preparation: ${assembledContext.symbols.length} symbols indexed` });
 
         // 4. Provision local deterministic tools
         const { tools, executeTool } = createRepositoryTools(rootDir, scanIndex);
 
         // 5. Initial Document Generation with tool execution capability
+        notify?.({ stage: "generation", status: "started", message: "Document generation" });
         let currentDoc = await this.generator.generate(assembledContext, {
             style,
             tools,
             toolExecutor: executeTool
         });
+        notify?.({ stage: "generation", status: "completed", message: `Document generation: ${currentDoc.sections.length} sections generated` });
 
         const validationHistory: ValidationResult[] = [];
         let attempts = 0;
 
         // 6. Validation and Targeted Revision Loop
+        notify?.({ stage: "validation", status: "started", message: "Document validation (Deterministic AST & References)" });
         while (attempts <= this.maxRevisionAttempts) {
             let validation: ValidationResult;
 
@@ -139,8 +160,16 @@ export class PipelineOrchestrator {
             validationHistory.push(validation);
 
             if (validation.passed) {
+                notify?.({ stage: "validation", status: "completed", message: "Document validation passed" });
                 currentDoc.sections.forEach(s => s.status = "approved");
-                const savedFilePath = outDir ? await this.saveDocumentation(currentDoc, target, outDir) : undefined;
+                
+                let savedFilePath: string | undefined;
+                if (outDir) {
+                    notify?.({ stage: "writing", status: "started", message: "Writing documentation to output directory" });
+                    savedFilePath = await this.saveDocumentation(currentDoc, target, outDir);
+                    notify?.({ stage: "writing", status: "completed", message: `Documentation saved to ${savedFilePath}` });
+                }
+
                 return {
                     status: "validated",
                     document: currentDoc,
@@ -151,8 +180,14 @@ export class PipelineOrchestrator {
             }
 
             if (attempts >= this.maxRevisionAttempts) {
+                notify?.({ stage: "validation", status: "failed", message: `Document validation unresolved after ${attempts} attempts` });
                 currentDoc.sections.forEach(s => s.status = "unapproved");
-                const savedFilePath = outDir ? await this.saveDocumentation(currentDoc, target, outDir) : undefined;
+                
+                let savedFilePath: string | undefined;
+                if (outDir) {
+                    savedFilePath = await this.saveDocumentation(currentDoc, target, outDir);
+                }
+
                 return {
                     status: "unapproved",
                     document: currentDoc,
@@ -165,8 +200,11 @@ export class PipelineOrchestrator {
 
             // Perform targeted revision on affected sections only
             attempts++;
+            notify?.({ stage: "revision", status: "started", message: `Targeted revision attempt ${attempts}/${this.maxRevisionAttempts}` });
             currentDoc = await this.revisionAgent.revise(currentDoc, validation, target);
+            notify?.({ stage: "revision", status: "completed", message: `Targeted revision complete (${validation.affectedSectionIds.length} sections updated)` });
         }
+
 
         // Fallback safety
         currentDoc.sections.forEach(s => s.status = "unapproved");

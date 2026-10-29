@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { Command } from "commander";
 import { scanRepository } from "./scanner/scanRepository.js";
 import { PipelineOrchestrator } from "./orchestrator/pipelineOrchestrator.js";
 import { loadConfig } from "./config/env.js";
+import { TerminalUI } from "./cli/ui.js";
+import { executeInitCommand, executeValidateCommand } from "./cli/commands.js";
 
 // Auto-discover local env file if present
 function tryLoadEnv() {
@@ -39,127 +42,331 @@ function tryLoadEnv() {
 
 tryLoadEnv();
 
-async function main() {
-    const args = process.argv.slice(2);
-    const firstArg = args[0];
+const program = new Command();
 
-    if (!firstArg || firstArg === "--help" || firstArg === "-h") {
-        console.log(`
-⚡ Chronodoc - Instant Codebase Documentation
+program
+    .name("docagent")
+    .description("Your codebase, documented.")
+    .version("1.0.0");
 
-Simple Usage:
-  doc <file>                        Generate docs (saved to docs/generated/)
-  doc <file> -p mock                Test offline without API key
-  doc scan                          Scan files and symbols in current folder
+// Global options
+program
+    .option("--no-color", "Disable colored terminal output")
+    .option("--quiet", "Suppress non-essential messages")
+    .option("--verbose", "Show detailed diagnostic output")
+    .option("--json", "Output results in JSON format");
 
-Full Options:
-  doc <file> [-o <outDir>] [-p <provider>] [-s <style>] [-r <rootDir>]
+// 1. Init Command
+program
+    .command("init")
+    .description("Initialize DocAgent environment and starter configuration")
+    .option("-r, --root <dir>", "Project root directory", ".")
+    .action(async (cmdOptions) => {
+        const globalOpts = program.opts();
+        const ui = new TerminalUI({
+            noColor: !globalOpts.color,
+            quiet: globalOpts.quiet || globalOpts.json,
+            verbose: globalOpts.verbose
+        });
 
-Flags:
-  -o, --out       Destination directory (default: docs/generated)
-  -p, --provider  LLM provider: gemini | openai | mock (default: from .env)
-  -s, --style     Style: developer-guide | api-reference | architecture-overview
-  -r, --root      Root directory to scan (default: .)
-  -h, --help      Show help
-  -v, --version   Show version
-
-Examples:
-  doc src/index.ts
-  doc src/server.ts -o docs/api
-  doc src/app.ts -p gemini
-        `);
-        process.exit(0);
-    }
-
-    if (firstArg === "--version" || firstArg === "-v") {
-        console.log("1.0.0");
-        process.exit(0);
-    }
-
-    if (firstArg === "scan") {
-        const rootDir = args[1] || ".";
-        console.log(`Scanning repository at: ${rootDir}...`);
-        const result = await scanRepository(rootDir);
-        console.log(`Discovered ${result.files.length} supported files.`);
-        if (result.warnings.length > 0) {
-            console.warn(`Warnings encountered:`, result.warnings);
+        const startTime = Date.now();
+        if (!globalOpts.json) {
+            ui.printHeader({
+                project: path.basename(path.resolve(cmdOptions.root)),
+                output: "./env/.env"
+            });
+            ui.startStage("Initializing project configuration");
         }
-        process.exit(result.complete ? 0 : 1);
-    }
 
-    // Determine target file: user can type "doc generate <file>" or simply "doc <file>"
-    let targetFile = firstArg === "generate" ? args[1] : firstArg;
-    const startIndex = firstArg === "generate" ? 2 : 1;
+        try {
+            const result = await executeInitCommand({ rootDir: cmdOptions.root });
+            const duration = Date.now() - startTime;
 
-    if (!targetFile || targetFile.startsWith("-")) {
-        console.error("Error: target file required. Example: doc src/app.ts");
-        process.exit(1);
-    }
+            if (globalOpts.json) {
+                console.log(JSON.stringify({ status: "success", result, durationMs: duration }, null, 2));
+                process.exit(0);
+            }
 
-    // Default out directory to docs/generated so users don't need to specify it
-    let outDir: string = "docs/generated";
-    let rootDir: string = ".";
-    let provider: "openai" | "gemini" | "anthropic" | "mock" | undefined = undefined;
-    let style: "api-reference" | "architecture-overview" | "developer-guide" | undefined = undefined;
+            ui.completeStage("Configuration initialized");
+            ui.printSummary({
+                documentsCreated: result.createdFiles.length,
+                validationStatus: "Passed",
+                outputDirectory: "./env",
+                durationMs: duration,
+                nextSteps: [
+                    "Configure your API key in env/.env",
+                    "Run 'docagent generate <file>' to generate documentation"
+                ]
+            });
+            process.exit(0);
+        } catch (err: any) {
+            if (globalOpts.json) {
+                console.error(JSON.stringify({ status: "error", message: err.message }, null, 2));
+                process.exit(1);
+            }
 
-    for (let i = startIndex; i < args.length; i++) {
-        const arg = args[i];
-        const next = args[i + 1];
-
-        if ((arg === "--root" || arg === "-r") && next) {
-            rootDir = next;
-            i++;
-        } else if ((arg === "--out" || arg === "-o") && next) {
-            outDir = next;
-            i++;
-        } else if ((arg === "--provider" || arg === "-p") && next) {
-            provider = next as any;
-            i++;
-        } else if ((arg === "--style" || arg === "-s") && next) {
-            style = next as any;
-            i++;
+            ui.printError({
+                operation: "Project Initialization",
+                failure: "Failed to create configuration",
+                reason: err.message,
+                nextAction: "Verify file permissions in the working directory"
+            });
+            process.exit(1);
         }
-    }
-
-    const config = loadConfig(provider ? { llmProvider: provider } : {});
-    const activeApiKey = config.llmProvider === "gemini" 
-        ? config.geminiApiKey 
-        : (config.llmProvider === "openai" ? config.openaiApiKey : undefined);
-
-    const orchestrator = new PipelineOrchestrator({
-        provider: config.llmProvider,
-        apiKey: activeApiKey,
-        model: config.llmModel,
-        tokenBudget: config.tokenBudget,
-        maxRevisionAttempts: config.maxRevisionAttempts
     });
 
-    console.log(`\n📄 Documenting: ${targetFile} [Provider: ${config.llmProvider}]`);
-    const result = await orchestrator.execute({
-        target: targetFile,
-        rootDir,
-        style,
-        outDir
+// 2. Scan Command
+program
+    .command("scan [directory]")
+    .description("Scan repository files, AST symbols, and dependencies")
+    .action(async (directory = ".") => {
+        const globalOpts = program.opts();
+        const ui = new TerminalUI({
+            noColor: !globalOpts.color,
+            quiet: globalOpts.quiet || globalOpts.json,
+            verbose: globalOpts.verbose
+        });
+
+        const startTime = Date.now();
+        const resolvedDir = path.resolve(directory);
+
+        if (!globalOpts.json) {
+            ui.printHeader({
+                project: path.basename(resolvedDir),
+                output: directory
+            });
+            ui.startStage(`Scanning repository files in ${directory}`);
+        }
+
+        try {
+            const result = await scanRepository(directory);
+            const duration = Date.now() - startTime;
+
+            if (globalOpts.json) {
+                console.log(JSON.stringify({ status: "success", result, durationMs: duration }, null, 2));
+                process.exit(result.complete ? 0 : 1);
+            }
+
+            ui.completeStage(`Repository scanned: ${result.files.length} supported files discovered`);
+
+            if (result.warnings.length > 0) {
+                result.warnings.forEach(w => ui.printWarning(w));
+            }
+
+            ui.printSummary({
+                documentsCreated: 0,
+                validationStatus: result.complete ? "Passed" : "Warnings Present",
+                outputDirectory: directory,
+                durationMs: duration,
+                nextSteps: ["Run 'docagent generate <file>' on any discovered file"]
+            });
+
+            process.exit(result.complete ? 0 : 1);
+        } catch (err: any) {
+            if (globalOpts.json) {
+                console.error(JSON.stringify({ status: "error", message: err.message }, null, 2));
+                process.exit(1);
+            }
+
+            ui.printError({
+                operation: "Repository Scanning",
+                failure: "Failed to scan directory",
+                reason: err.message,
+                nextAction: "Ensure the path exists and contains readable source files"
+            });
+            process.exit(1);
+        }
     });
 
-    console.log(`✔ Pipeline Status: ${result.status.toUpperCase()}`);
-    console.log(`✔ Revision Attempts: ${result.revisionAttempts}`);
-    if (result.savedFilePath) {
-        console.log(`📁 Saved to: ${result.savedFilePath}`);
-    }
-    console.log(`\n----------------- PREVIEW -----------------\n`);
-    console.log(result.document.rawMarkdown);
-    console.log(`-------------------------------------------\n`);
+// 3. Validate Command
+program
+    .command("validate <docFile>")
+    .description("Validate an existing documentation file against repository AST symbols and paths")
+    .option("-r, --root <dir>", "Project root directory", ".")
+    .action(async (docFile, cmdOptions) => {
+        const globalOpts = program.opts();
+        const ui = new TerminalUI({
+            noColor: !globalOpts.color,
+            quiet: globalOpts.quiet || globalOpts.json,
+            verbose: globalOpts.verbose
+        });
 
-    if (result.status === "unapproved" && result.unresolvedIssues) {
-        console.warn("\n⚠️ Unresolved Issues:");
-        result.unresolvedIssues.forEach(issue => console.warn(`- [${issue.sectionId}] ${issue.type}: ${issue.message}`));
-    }
+        const startTime = Date.now();
+        if (!globalOpts.json) {
+            ui.printHeader({
+                project: path.basename(path.resolve(cmdOptions.root)),
+                output: docFile
+            });
+            ui.startStage(`Validating ${docFile} against codebase AST`);
+        }
 
-    process.exit(result.status === "validated" ? 0 : 2);
-}
+        try {
+            const result = await executeValidateCommand({
+                docPath: docFile,
+                rootDir: cmdOptions.root
+            });
 
-main().catch(err => {
-    console.error("Fatal error:", err);
-    process.exit(1);
-});
+            const duration = Date.now() - startTime;
+
+            if (globalOpts.json) {
+                console.log(JSON.stringify({ status: result.passed ? "passed" : "failed", result, durationMs: duration }, null, 2));
+                process.exit(result.passed ? 0 : 2);
+            }
+
+            if (!result.passed) {
+                ui.failStage(`Validation failed for ${docFile}`);
+                if (result.issues.length > 0) {
+                    result.issues.forEach(issue => {
+                        ui.printWarning(`[${issue.sectionId}] ${issue.type}: ${issue.message} ${issue.evidence ? `(${issue.evidence})` : ""}`);
+                    });
+                }
+                if (result.error) {
+                    ui.printError({
+                        operation: "Document Validation",
+                        failure: "File could not be validated",
+                        reason: result.error,
+                        nextAction: "Check that the document path is correct"
+                    });
+                }
+                process.exit(2);
+            }
+
+            ui.completeStage(`Validation passed (${result.sectionsChecked} sections verified)`);
+            ui.printSummary({
+                documentsCreated: 0,
+                validationStatus: "Passed",
+                outputDirectory: docFile,
+                durationMs: duration,
+                nextSteps: ["All references and AST symbols verified accurately."]
+            });
+
+            process.exit(0);
+        } catch (err: any) {
+            if (globalOpts.json) {
+                console.error(JSON.stringify({ status: "error", message: err.message }, null, 2));
+                process.exit(1);
+            }
+
+            ui.printError({
+                operation: "Document Validation",
+                failure: "Unexpected validation crash",
+                reason: err.message,
+                nextAction: "Review verbose output with --verbose"
+            });
+            process.exit(1);
+        }
+    });
+
+// 4. Generate Command (also default fallback)
+program
+    .command("generate <file>", { isDefault: true })
+    .description("Generate verified, grounded technical documentation for a target file")
+    .option("-r, --root <dir>", "Repository root directory", ".")
+    .option("-o, --out <dir>", "Destination directory", "docs/generated")
+    .option("-p, --provider <provider>", "LLM provider: gemini | openai | mock")
+    .option("-s, --style <style>", "Documentation style: developer-guide | api-reference | architecture-overview")
+    .action(async (file, cmdOptions) => {
+        const globalOpts = program.opts();
+        const ui = new TerminalUI({
+            noColor: !globalOpts.color,
+            quiet: globalOpts.quiet || globalOpts.json,
+            verbose: globalOpts.verbose
+        });
+
+        const startTime = Date.now();
+        const resolvedRoot = path.resolve(cmdOptions.root);
+        const config = loadConfig(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {});
+
+        const activeApiKey = config.llmProvider === "gemini"
+            ? config.geminiApiKey
+            : (config.llmProvider === "openai" ? config.openaiApiKey : undefined);
+
+        if (!globalOpts.json) {
+            ui.printHeader({
+                project: path.basename(resolvedRoot),
+                output: cmdOptions.out,
+                target: file,
+                provider: config.llmProvider
+            });
+        }
+
+        const orchestrator = new PipelineOrchestrator({
+            provider: config.llmProvider,
+            apiKey: activeApiKey,
+            model: config.llmModel,
+            tokenBudget: config.tokenBudget,
+            maxRevisionAttempts: config.maxRevisionAttempts,
+            onProgress: (event) => {
+                if (globalOpts.json) return;
+                if (event.status === "started") {
+                    ui.startStage(event.message);
+                } else if (event.status === "completed") {
+                    ui.completeStage(event.message);
+                } else if (event.status === "failed") {
+                    ui.failStage(event.message);
+                }
+            }
+        });
+
+        try {
+            const result = await orchestrator.execute({
+                target: file,
+                rootDir: cmdOptions.root,
+                style: cmdOptions.style,
+                outDir: cmdOptions.out
+            });
+
+            const duration = Date.now() - startTime;
+
+            if (globalOpts.json) {
+                console.log(JSON.stringify({ status: result.status, result, durationMs: duration }, null, 2));
+                process.exit(result.status === "validated" ? 0 : 2);
+            }
+
+            ui.stopSpinner();
+
+            if (result.status === "unapproved" && result.unresolvedIssues) {
+                result.unresolvedIssues.forEach(i => {
+                    ui.printWarning(`[${i.sectionId}] ${i.type}: ${i.message}`);
+                });
+            }
+
+            ui.printSummary({
+                documentsCreated: result.savedFilePath ? 1 : 0,
+                validationStatus: result.status === "validated" ? "Passed" : "Unapproved Draft",
+                outputDirectory: result.savedFilePath ?? cmdOptions.out,
+                durationMs: duration,
+                nextSteps: result.savedFilePath ? [`Review ${result.savedFilePath}`] : undefined
+            });
+
+            process.exit(result.status === "validated" ? 0 : 2);
+        } catch (err: any) {
+            ui.stopSpinner();
+            const duration = Date.now() - startTime;
+
+            if (globalOpts.json) {
+                console.error(JSON.stringify({ status: "error", message: err.message, durationMs: duration }, null, 2));
+                process.exit(1);
+            }
+
+            let nextAction = "Verify target file exists and check configuration";
+            if (err.message.includes("API key")) {
+                nextAction = `Set ${config.llmProvider.toUpperCase()}_API_KEY in your env/.env file or run with -p mock`;
+            }
+
+            ui.printError({
+                operation: "Document Generation",
+                failure: "Documentation pipeline failed",
+                reason: err.message,
+                nextAction
+            });
+
+            if (globalOpts.verbose && err.stack) {
+                ui.printDiagnostic(err.stack);
+            }
+
+            process.exit(1);
+        }
+    });
+
+program.parse(process.argv);

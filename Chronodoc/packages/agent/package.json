@@ -1,70 +1,76 @@
 {
-    "name":  "@chronodoc/agent",
-    "version":  "1.0.0",
-    "description":  "AI Documentation Agent with Hybrid RAG and Bounded Self-Revision",
-    "type":  "module",
-    "main":  "./dist/index.js",
-    "types":  "./dist/index.d.ts",
-    "exports":  {
-                    ".":  {
-                              "types":  "./dist/index.d.ts",
-                              "import":  "./dist/index.js"
-                          },
-                    "./scanner":  {
-                                      "types":  "./dist/scanner/scanRepository.d.ts",
-                                      "import":  "./dist/scanner/scanRepository.js"
-                                  },
-                    "./retrieval":  {
-                                        "types":  "./dist/retrieval/hybridRetriever.d.ts",
-                                        "import":  "./dist/retrieval/hybridRetriever.js"
-                                    },
-                    "./context":  {
-                                      "types":  "./dist/context/contextBuilder.d.ts",
-                                      "import":  "./dist/context/contextBuilder.js"
-                                  },
-                    "./generator":  {
-                                        "types":  "./dist/generator/documentGenerator.d.ts",
-                                        "import":  "./dist/generator/documentGenerator.js"
-                                    },
-                    "./validator":  {
-                                        "types":  "./dist/validator/documentValidator.d.ts",
-                                        "import":  "./dist/validator/documentValidator.js"
-                                    },
-                    "./orchestrator":  {
-                                           "types":  "./dist/orchestrator/pipelineOrchestrator.d.ts",
-                                           "import":  "./dist/orchestrator/pipelineOrchestrator.js"
-                                       },
-                    "./config":  {
-                                     "types":  "./dist/config/env.d.ts",
-                                     "import":  "./dist/config/env.js"
-                                 }
-                },
-    "files":  [
-                  "dist",
-                  "env"
-              ],
-    "scripts":  {
-                    "build":  "tsc",
-                    "test":  "tsx --test tests/*.test.ts",
-                    "prepack":  "npm run build"
-                },
-    "keywords":  [
-                     "ai",
-                     "documentation",
-                     "agent",
-                     "rag",
-                     "chronodoc"
-                 ],
-    "author":  "Chronodoc Team",
-    "license":  "Apache-2.0",
-    "devDependencies":  {
-                            "@types/node":  "^22.16.5",
-                            "tsx":  "^4.23.15",
-                            "typescript":  "^5.9.3"
-                        },
-    "bin":  {
-                "chronodoc": "./dist/cli.js",
-                "doc": "./dist/cli.js",
-                "chronodoc-agent": "./dist/cli.js"
-            }
+    "name": "@chronodoc/agent",
+    "version": "1.0.0",
+    "description": "AI Documentation Agent with Hybrid RAG and Bounded Self-Revision",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./scanner": {
+            "types": "./dist/scanner/scanRepository.d.ts",
+            "import": "./dist/scanner/scanRepository.js"
+        },
+        "./retrieval": {
+            "types": "./dist/retrieval/hybridRetriever.d.ts",
+            "import": "./dist/retrieval/hybridRetriever.js"
+        },
+        "./context": {
+            "types": "./dist/context/contextBuilder.d.ts",
+            "import": "./dist/context/contextBuilder.js"
+        },
+        "./generator": {
+            "types": "./dist/generator/documentGenerator.d.ts",
+            "import": "./dist/generator/documentGenerator.js"
+        },
+        "./validator": {
+            "types": "./dist/validator/documentValidator.d.ts",
+            "import": "./dist/validator/documentValidator.js"
+        },
+        "./orchestrator": {
+            "types": "./dist/orchestrator/pipelineOrchestrator.d.ts",
+            "import": "./dist/orchestrator/pipelineOrchestrator.js"
+        },
+        "./config": {
+            "types": "./dist/config/env.d.ts",
+            "import": "./dist/config/env.js"
+        }
+    },
+    "files": [
+        "dist",
+        "env"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "test": "tsx --test tests/*.test.ts tests/**/*.test.ts",
+        "prepack": "npm run build"
+    },
+    "keywords": [
+        "ai",
+        "documentation",
+        "agent",
+        "rag",
+        "chronodoc"
+    ],
+    "author": "Chronodoc Team",
+    "license": "Apache-2.0",
+    "devDependencies": {
+        "@types/node": "^22.16.5",
+        "tsx": "^4.23.15",
+        "typescript": "^5.9.3"
+    },
+    "bin": {
+        "docagent": "./dist/cli.js",
+        "doc": "./dist/cli.js",
+        "chronodoc": "./dist/cli.js",
+        "chronodoc-agent": "./dist/cli.js"
+    },
+    "dependencies": {
+        "commander": "^15.0.0",
+        "ora": "^9.4.1",
+        "picocolors": "^1.1.1"
+    }
 }
