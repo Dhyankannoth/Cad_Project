@@ -177,6 +177,112 @@ export class GeminiLLMClient implements LLMClient {
     }
 }
 
+export class AnthropicLLMClient implements LLMClient {
+    private apiKey: string;
+    private model: string;
+
+    constructor(options: { apiKey: string; model?: string }) {
+        this.apiKey = options.apiKey;
+        this.model = options.model ?? "claude-3-5-sonnet-20241022";
+    }
+
+    public async chat(
+        messages: LLMMessage[],
+        options?: { tools?: ToolDefinition[]; temperature?: number }
+    ): Promise<LLMResponse> {
+        const systemMsg = messages.find(m => m.role === "system")?.content;
+        const nonSystemMsgs = messages.filter(m => m.role !== "system");
+
+        const anthropicMessages = nonSystemMsgs.map(m => {
+            if (m.role === "tool") {
+                return {
+                    role: "user",
+                    content: [{
+                        type: "tool_result",
+                        tool_use_id: m.toolCallId,
+                        content: m.content
+                    }]
+                };
+            }
+            if (m.toolCalls && m.toolCalls.length > 0) {
+                const parts: any[] = [];
+                if (m.content) {
+                    parts.push({ type: "text", text: m.content });
+                }
+                for (const tc of m.toolCalls) {
+                    parts.push({
+                        type: "tool_use",
+                        id: tc.id,
+                        name: tc.name,
+                        input: tc.arguments
+                    });
+                }
+                return {
+                    role: "assistant",
+                    content: parts
+                };
+            }
+            return {
+                role: m.role === "assistant" ? "assistant" : "user",
+                content: m.content
+            };
+        });
+
+        const payload: Record<string, any> = {
+            model: this.model,
+            max_tokens: 4096,
+            temperature: options?.temperature ?? 0.2,
+            messages: anthropicMessages
+        };
+
+        if (systemMsg) {
+            payload.system = systemMsg;
+        }
+
+        if (options?.tools && options.tools.length > 0) {
+            payload.tools = options.tools.map(t => ({
+                name: t.name,
+                description: t.description,
+                input_schema: t.parameters
+            }));
+        }
+
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": this.apiKey,
+                "anthropic-version": "2023-06-01"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Anthropic API request failed (${res.status}): ${errText}`);
+        }
+
+        const data = (await res.json()) as any;
+        const textParts = (data.content ?? [])
+            .filter((c: any) => c.type === "text")
+            .map((c: any) => c.text)
+            .join("");
+
+        const toolCalls: ToolCallRequest[] = (data.content ?? [])
+            .filter((c: any) => c.type === "tool_use")
+            .map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                arguments: c.input || {}
+            }));
+
+        return {
+            content: textParts,
+            toolCalls: toolCalls.length > 0 ? toolCalls : undefined
+        };
+    }
+}
+
 export function createLLMClient(config: {
     provider: "openai" | "gemini" | "anthropic" | "mock";
     apiKey?: string;
@@ -201,5 +307,13 @@ export function createLLMClient(config: {
         return new GeminiLLMClient({ apiKey: config.apiKey, model: config.model });
     }
 
+    if (config.provider === "anthropic") {
+        if (!config.apiKey || config.apiKey.trim().length === 0) {
+            throw new Error("Anthropic API key is missing. Set ANTHROPIC_API_KEY in your env or pass it explicitly.");
+        }
+        return new AnthropicLLMClient({ apiKey: config.apiKey, model: config.model });
+    }
+
     throw new Error(`Unsupported LLM provider: ${config.provider}`);
 }
+
