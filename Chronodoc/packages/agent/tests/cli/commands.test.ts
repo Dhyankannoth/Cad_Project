@@ -74,7 +74,7 @@ test("executeInitCommand configures Google Gemini via interactive prompt handler
     const content = await fs.readFile(path.join(tempDir, "env/.env"), "utf-8");
     assert.ok(content.includes("LLM_PROVIDER=gemini"));
     assert.ok(content.includes("GEMINI_API_KEY=AIzaSyTestKey12345678"));
-    assert.ok(content.includes("LLM_MODEL=gemini-3.8-flash"));
+    assert.ok(content.includes("LLM_MODEL=gemini-2.5-flash"));
 
     await fs.rm(tempDir, { recursive: true, force: true });
 });

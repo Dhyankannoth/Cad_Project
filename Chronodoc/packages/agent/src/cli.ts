@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import dns from "node:dns";
+try { dns.setDefaultResultOrder("ipv4first"); } catch {}
 import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
@@ -301,6 +303,7 @@ program
     .option("-r, --root <dir>", "Repository root directory", ".")
     .option("-o, --out <dir>", "Destination directory", "docs/generated")
     .option("-p, --provider <provider>", "LLM provider: gemini | openai | anthropic | mock")
+    .option("-m, --model <model>", "LLM model override (e.g. gemini-2.5-flash, gemini-3.5-flash, gpt-4o)")
     .option("-s, --style <style>", "Documentation style: developer-guide | api-reference | architecture-overview")
     .action(async (file, cmdOptions) => {
         const globalOpts = program.opts();
@@ -327,7 +330,10 @@ program
             process.exit(1);
         }
 
-        const config = loadConfig(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {});
+        const config = loadConfig({
+            ...(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {}),
+            ...(cmdOptions.model ? { llmModel: cmdOptions.model } : {})
+        });
 
         const activeApiKey = config.llmProvider === "gemini"
             ? config.geminiApiKey
@@ -410,10 +416,15 @@ program
                 nextAction = `Set ${config.llmProvider.toUpperCase()}_API_KEY in your env/.env file or run with -p mock`;
             }
 
+            let reason = err.message;
+            if (err.cause?.message) {
+                reason = `${err.message} (${err.cause.message})`;
+            }
+
             ui.printError({
                 operation: "Document Generation",
                 failure: "Documentation pipeline failed",
-                reason: err.message,
+                reason,
                 nextAction
             });
 

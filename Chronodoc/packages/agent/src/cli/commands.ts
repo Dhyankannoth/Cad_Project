@@ -95,7 +95,7 @@ export async function executeInitCommand(options: InitOptions = {}): Promise<Ini
 
     const activeProvider = provider ?? "gemini";
     const meta = SUPPORTED_PROVIDERS.find(p => p.value === activeProvider);
-    const defaultModel = meta?.defaultModel ?? "gemini-3.8-flash";
+    const defaultModel = meta?.defaultModel ?? "gemini-2.5-flash";
 
 
     const template = `# ==============================================================================

@@ -27,9 +27,9 @@ export const SUPPORTED_PROVIDERS: ProviderMetadata[] = [
     {
         value: "gemini",
         label: "Google Gemini",
-        hint: "Gemini 3.8 Flash / Pro",
+        hint: "Gemini 2.5 Flash / 3.5 Flash",
         envKey: "GEMINI_API_KEY",
-        defaultModel: "gemini-3.8-flash"
+        defaultModel: "gemini-2.5-flash"
     },
 
     {
