@@ -11,6 +11,8 @@ export * from "./tools/repoTools.js";
 // Scanner & AST Extraction
 export * from "./scanner/astExtractor.js";
 export * from "./scanner/scanRepository.js";
+export * from "./scanner/projectRoot.js";
+
 
 // Hybrid RAG Retrieval
 export * from "./retrieval/bm25.js";

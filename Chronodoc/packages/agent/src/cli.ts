@@ -9,13 +9,16 @@ import { loadConfig } from "./config/env.js";
 import { TerminalUI } from "./cli/ui.js";
 import { executeInitCommand, executeValidateCommand } from "./cli/commands.js";
 import { SUPPORTED_PROVIDERS, maskApiKey } from "./cli/prompts.js";
+import { resolveProjectRoot } from "./scanner/projectRoot.js";
 
-// Auto-discover local env file if present
+// Auto-discover local env file from project main directory downwards
 function tryLoadEnv() {
+    const projectRoot = resolveProjectRoot();
     const candidates = [
+        path.join(projectRoot, "env/.env"),
+        path.join(projectRoot, ".env"),
         path.resolve(process.cwd(), "env/.env"),
-        path.resolve(process.cwd(), ".env"),
-        path.resolve(process.cwd(), "../../env/.env")
+        path.resolve(process.cwd(), ".env")
     ];
 
     for (const envPath of candidates) {
@@ -43,6 +46,7 @@ function tryLoadEnv() {
 }
 
 tryLoadEnv();
+
 
 const program = new Command();
 
@@ -84,11 +88,16 @@ program
             !cmdOptions.provider
         );
 
+        const projectRoot = resolveProjectRoot({
+            cwd: process.cwd(),
+            explicitRoot: cmdOptions.root === "." ? undefined : cmdOptions.root
+        });
+
         const startTime = Date.now();
 
         try {
             const result = await executeInitCommand({
-                rootDir: cmdOptions.root,
+                rootDir: projectRoot,
                 interactive: isInteractive,
                 provider: cmdOptions.provider,
                 apiKey: cmdOptions.apiKey,
@@ -111,7 +120,7 @@ program
 
             console.log("\n" + pc.green(pc.bold("✔ Provider configured successfully!")));
             console.log(`  ${pc.dim("Provider:")}      ${pc.bold(providerName)}`);
-            console.log(`  ${pc.dim("Configuration:")} ${path.join(cmdOptions.root, "env/.env")}`);
+            console.log(`  ${pc.dim("Configuration:")} ${path.join(projectRoot, "env/.env")}`);
             console.log(`  ${pc.dim("Credentials:")}   ${result.provider === "mock" ? pc.dim("(Mock mode - no API key needed)") : pc.green("(Saved securely)")}`);
             console.log("\n  " + pc.bold("Next steps:"));
             console.log(`    ${pc.cyan("→")} Run 'docagent generate <file>' to generate documentation\n`);
@@ -147,24 +156,28 @@ program
         });
 
         const startTime = Date.now();
-        const resolvedDir = path.resolve(directory);
+        const resolvedDir = resolveProjectRoot({
+            cwd: process.cwd(),
+            explicitRoot: directory === "." ? undefined : directory
+        });
 
         if (!globalOpts.json) {
             ui.printHeader({
                 project: path.basename(resolvedDir),
-                output: directory
+                output: resolvedDir
             });
-            ui.startStage(`Scanning repository files in ${directory}`);
+            ui.startStage(`Scanning repository files in ${resolvedDir}`);
         }
 
         try {
-            const result = await scanRepository(directory);
+            const result = await scanRepository(resolvedDir);
             const duration = Date.now() - startTime;
 
             if (globalOpts.json) {
                 console.log(JSON.stringify({ status: "success", result, durationMs: duration }, null, 2));
                 process.exit(result.complete ? 0 : 1);
             }
+
 
             ui.completeStage(`Repository scanned: ${result.files.length} supported files discovered`);
 
@@ -211,9 +224,14 @@ program
         });
 
         const startTime = Date.now();
+        const projectRoot = resolveProjectRoot({
+            cwd: process.cwd(),
+            explicitRoot: cmdOptions.root === "." ? undefined : cmdOptions.root
+        });
+
         if (!globalOpts.json) {
             ui.printHeader({
-                project: path.basename(path.resolve(cmdOptions.root)),
+                project: path.basename(projectRoot),
                 output: docFile
             });
             ui.startStage(`Validating ${docFile} against codebase AST`);
@@ -222,7 +240,7 @@ program
         try {
             const result = await executeValidateCommand({
                 docPath: docFile,
-                rootDir: cmdOptions.root
+                rootDir: projectRoot
             });
 
             const duration = Date.now() - startTime;
@@ -293,7 +311,10 @@ program
         });
 
         const startTime = Date.now();
-        const resolvedRoot = path.resolve(cmdOptions.root);
+        const resolvedRoot = resolveProjectRoot({
+            cwd: process.cwd(),
+            explicitRoot: cmdOptions.root === "." ? undefined : cmdOptions.root
+        });
         const config = loadConfig(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {});
 
         const activeApiKey = config.llmProvider === "gemini"
@@ -332,10 +353,11 @@ program
         try {
             const result = await orchestrator.execute({
                 target: file,
-                rootDir: cmdOptions.root,
+                rootDir: resolvedRoot,
                 style: cmdOptions.style,
                 outDir: cmdOptions.out
             });
+
 
             const duration = Date.now() - startTime;
 

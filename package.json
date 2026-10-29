@@ -2,14 +2,20 @@
   "name": "docagent",
   "version": "1.0.0",
   "description": "DocAgent - AI-Powered Codebase Documentation Platform",
-  "workspaces": [
-    "Chronodoc/packages/*"
-  ],
+  "main": "./Chronodoc/packages/agent/dist/index.js",
+  "types": "./Chronodoc/packages/agent/dist/index.d.ts",
   "bin": {
     "docagent": "./Chronodoc/packages/agent/dist/cli.js",
     "doc": "./Chronodoc/packages/agent/dist/cli.js",
     "chronodoc": "./Chronodoc/packages/agent/dist/cli.js"
   },
+  "files": [
+    "Chronodoc/packages/agent/dist",
+    "README.md"
+  ],
+  "workspaces": [
+    "Chronodoc/packages/*"
+  ],
   "scripts": {
     "prepare": "npm run build",
     "build": "npm --prefix Chronodoc/packages/agent run build",
@@ -19,5 +25,11 @@
     "scan": "node ./Chronodoc/packages/agent/dist/cli.js scan",
     "validate": "node ./Chronodoc/packages/agent/dist/cli.js validate",
     "init": "node ./Chronodoc/packages/agent/dist/cli.js init"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.1",
+    "commander": "^15.0.0",
+    "ora": "^9.4.1",
+    "picocolors": "^1.1.1"
   }
 }

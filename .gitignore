@@ -10,6 +10,8 @@ build/
 out/
 **/out/
 *.tsbuildinfo
+*.tgz
+
 
 # Logs & Runtime
 npm-debug.log*
