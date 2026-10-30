@@ -4,39 +4,29 @@ Welcome! This folder provides a complete, runnable quickstart guide and sample p
 
 ---
 
-## 📦 Step 1: How to Download & Install It Right Now
+## 📦 Step 1: How to Download & Install (or Reinstall) It Right Now
 
-You can install DocAgent globally on your machine using either of the two methods below:
+The package tarball `docagent-1.0.0.tgz` is packaged in the root of the project.
 
-### Method A: Install the Downloadable Tarball (Recommended for Testing)
-
-The downloadable package tarball `docagent-1.0.0.tgz` is already packaged in the main repository root. You can install it directly via npm:
-
+### If you want to uninstall and reinstall fresh:
 ```bash
-# From the repository root:
-npm install -g ./docagent-1.0.0.tgz
+# 1. Uninstall the existing global binary:
+npm uninstall -g docagent
+
+# 2. Install fresh from the local tarball:
+npm install -g ./docagent-1.0.0.tgz --force
 ```
 
-*(Or if you ever want to rebuild the tarball yourself, simply run `npm pack` in the main folder).*
-
-### Method B: Install Directly from the Local Project Root
-
-```bash
-# From the repository root:
-npm install -g .
-```
-
-Verify that DocAgent is installed and available:
-
+### Verify the installation:
 ```bash
 docagent --help
 ```
 
 ---
 
-## ⚡ Step 2: Test It in the Included Sample Project
+## ⚡ Step 2: Test It in the Clean Sample Demo Project
 
-We created a self-contained sample project in [how-to-use/sample-project](file:///c:/Users/Dhyan%20Kannoth/OneDrive/Documents/Cad_Project/how-to-use/sample-project).
+We provide a clean, self-contained demo project in [how-to-use/sample-project](file:///c:/Users/Dhyan%20Kannoth/OneDrive/Documents/Cad_Project/how-to-use/sample-project).
 
 Navigate to the sample project in your terminal:
 
@@ -61,116 +51,95 @@ You will see the Vite-style keyboard-navigable selection menu:
 │
   ● OpenAI (GPT-4o / GPT-4o-mini)
   ○ Anthropic (Claude 3.5 Sonnet)
-  ○ Google Gemini (Gemini 1.5 Flash / Pro)
+  ○ Google Gemini (Gemini 2.5 Flash / Pro)
   ○ Mock / Offline (Local testing without API key)
 │
   ↑/↓ Navigate   ↵ Select
 ```
 
-- Use **Up and Down arrow keys** to navigate.
-- Press **Enter** to select.
-- If you pick OpenAI, Anthropic, or Gemini, type your API key (masked on-screen with `*`).
-- If you pick **Mock / Offline**, it immediately configures without requiring an API key.
+- If you pick **Google Gemini**, **OpenAI**, or **Anthropic**, enter your API key (it is masked on-screen with `*`).
+- If you pick **Mock / Offline**, it immediately configures without requiring an API key (ideal for zero-cost offline testing).
 
 ---
 
-### 2. Scan the Project
+### 2. Generate the Full Repository Documentation Suite
 
-Run repository scanning:
+To generate the complete interconnected documentation suite (`README.md`, `architecture/overview.md` with Mermaid diagrams, `components.md`, `data-flow.md`, `guides/`, and `metadata/`):
 
 ```bash
-docagent scan
+# Run inside sample-project:
+docagent generate -p mock
 ```
 
-Output:
+*(Or from anywhere specifying the root directory: `docagent generate -r how-to-use/sample-project -p mock`)*
+
+**Output:**
 ```text
 ◆ DOCAGENT
   Your codebase, documented.
 
   Project: sample-project
-  Output:  how-to-use\sample-project
+  Output:  docs
+  Target:  Whole Repository Suite
+  Provider:mock
 
-  ○ Scanning repository files...
-  ✔ Repository scanned: 2 supported files discovered
-```
-
-Notice that DocAgent automatically detects `sample-project` as the main project directory and scans all files (`orderService.ts`, `paymentGateway.ts`) from the main directory onwards.
-
----
-
-### 3. Generate Grounded Documentation
-
-Generate technical documentation for `orderService.ts`:
-
-#### Test Offline (Instant, No API Key Required):
-```bash
-docagent generate src/orderService.ts -p mock
-```
-
-#### Generate with Real AI (Using Configured Provider):
-```bash
-docagent generate src/orderService.ts
-```
-
-Output:
-```text
-◆ DOCAGENT
-  Your codebase, documented.
-
-  Project: sample-project
-  Output:  docs/generated
-  Target:  src/orderService.ts
-
-  ○ Repository scanning...
-  ✔ Repository scanning: 2 files discovered
-  ○ Hybrid retrieval (AST + Lexical + Semantic)...
-  ✔ Hybrid retrieval: context items retrieved
-  ○ Context preparation & token budgeting...
-  ✔ Context preparation: symbols indexed
-  ○ Document generation...
-  ✔ Document generation: 3 sections generated
-  ○ Document validation (Deterministic AST & References)...
-  ✔ Document validation passed
-  ○ Writing documentation to output directory...
-  ✔ Documentation saved to docs\generated\orderService_ts.md
+  ○ Scanning repository files and AST symbols...
+  ✔ Scanned 2 files (6 symbols discovered)
+  ○ Analyzing project characteristics and planning documentation tree...
+  ✔ Planned 8 documents (2 skipped with reasons)
+  ○ Generating cohesive Markdown documentation suite...
+  ✔ Generated 8 documentation files
+  ○ Validating cross-document internal links, symbols, and secrets...
+  ✔ Validation passed (8 links verified)
+  ○ Writing documentation to disk with edit preservation...
+  ✔ Wrote documents: 8 created, 0 updated, 0 unchanged
+  ○ Generating machine-readable metadata report...
+  ✔ Metadata report saved to docs\metadata\generation-report.json
+  ▲ Skipped 'reference/api.md': No HTTP routes, REST endpoints, or server handlers detected in codebase.
+  ▲ Skipped 'reference/database.md': No database schemas, ORM models, migrations, or database client dependencies detected in codebase.
 
 ✔ Documentation generated successfully
 ```
 
 ---
 
-### 4. Validate Existing Documentation
+### 3. Test Safe Regeneration (Change Detection)
 
-Verify that all AST symbol references, function names, and interfaces in a document exist in the actual codebase:
-
+Run the command again without changing files:
 ```bash
-docagent validate docs/generated/orderService_ts.md
+docagent generate -p mock
 ```
 
-Output:
+**Output:**
 ```text
-◆ DOCAGENT
-  Your codebase, documented.
+✔ Wrote documents: 0 created, 0 updated, 8 unchanged
+```
+DocAgent uses SHA-256 hashes to detect that nothing changed, preserving existing files and file modification timestamps!
 
-  ✔ Validation passed (3 sections verified)
+---
+
+### 4. Generate Documentation for an Individual Source File
+
+If you only want documentation for a single source file (e.g. `src/orderService.ts`):
+
+```bash
+docagent generate src/orderService.ts -p mock
 ```
 
 ---
 
 ## 🏃 1-Click Automated Demo Script
 
-Want to see the entire flow executed automatically in 5 seconds?
+Want to see the entire erase-and-recreate flow executed in 5 seconds?
 
-Run the included PowerShell script from this folder:
+Run the included PowerShell script from the `how-to-use` folder:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\run-demo.ps1
+powershell -ExecutionPolicy Bypass -File .\how-to-use\run-demo.ps1
 ```
 
 This script automatically:
-1. Navigates to `sample-project/`
+1. Erases previous `docs/` in the sample project
 2. Initializes DocAgent with the mock provider
-3. Scans all files
-4. Generates verified documentation for `src/orderService.ts`
-5. Validates the generated markdown against codebase AST
-6. Prints the generated documentation directly to your terminal!
+3. Generates the full repository documentation suite (`8 created`)
+4. Prints the generated `docs/README.md` and `docs/architecture/overview.md` (with Mermaid diagrams) directly to your terminal!

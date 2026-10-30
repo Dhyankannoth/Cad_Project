@@ -36,6 +36,7 @@ export interface RepositoryDocResult {
     suite: Map<string, GeneratedDocument>;
     validation: SuiteValidationResult;
     writeReport: WriteReport;
+    outputDir: string;
     reportPath: string;
     durationMs: number;
 }
@@ -70,8 +71,8 @@ export class RepositoryDocOrchestrator {
     }): Promise<RepositoryDocResult> {
         const startTime = Date.now();
         const rootDir = path.resolve(params.rootDir);
-        const resolvedOut = params.outputDir ?? params.outDir ?? path.join(rootDir, "docs");
-        const outputDir = path.resolve(resolvedOut);
+        const rawOut = params.outputDir ?? params.outDir ?? "docs";
+        const outputDir = path.isAbsolute(rawOut) ? rawOut : path.resolve(rootDir, rawOut);
         const notify = params.onProgress ?? this.onProgress;
 
         // 1. Scanning
@@ -172,6 +173,7 @@ export class RepositoryDocOrchestrator {
             suite,
             validation,
             writeReport,
+            outputDir,
             reportPath,
             durationMs
         };

@@ -387,14 +387,17 @@ program
                     });
                 }
 
+                const displayReadme = path.relative(process.cwd(), path.join(result.outputDir, "README.md"));
+                const displayReport = path.relative(process.cwd(), result.reportPath);
+
                 ui.printSummary({
                     documentsCreated: result.writeReport.created.length + result.writeReport.updated.length,
                     validationStatus: result.status === "success" ? "Passed" : "Warnings Present",
-                    outputDirectory: path.resolve(resolvedRoot, outDir),
+                    outputDirectory: result.outputDir,
                     durationMs: duration,
                     nextSteps: [
-                        `Review documentation starting at ${path.join(outDir, "README.md")}`,
-                        `Inspect generation metadata report at ${path.join(outDir, "metadata/generation-report.json")}`
+                        `Review documentation starting at ${displayReadme}`,
+                        `Inspect generation metadata report at ${displayReport}`
                     ]
                 });
 

@@ -12,29 +12,34 @@ Write-Host "Target project: $SampleDir`n" -ForegroundColor DarkGray
 Push-Location $SampleDir
 
 try {
-    # 1. Initialize configuration
-    Write-Host "[1/4] Initializing DocAgent environment..." -ForegroundColor Yellow
+    # 1. Clean previous runs
+    if (Test-Path "docs") { Remove-Item -Recurse -Force "docs" }
+
+    # 2. Initialize configuration
+    Write-Host "[1/3] Initializing DocAgent environment..." -ForegroundColor Yellow
     docagent init --non-interactive --provider mock --force
 
-    # 2. Scan repository
-    Write-Host "`n[2/4] Scanning sample repository..." -ForegroundColor Yellow
-    docagent scan
+    # 3. Generate comprehensive repository documentation suite
+    Write-Host "`n[2/3] Generating full repository documentation suite with AST grounding..." -ForegroundColor Yellow
+    docagent generate -p mock
 
-    # 3. Generate documentation
-    Write-Host "`n[3/4] Generating grounded documentation for src/orderService.ts..." -ForegroundColor Yellow
-    docagent generate src/orderService.ts -p mock
+    # 4. Display generated output
+    Write-Host "`n[3/3] Documentation Suite Generated!" -ForegroundColor Green
+    
+    $readmePath = Join-Path $SampleDir "docs/README.md"
+    $overviewPath = Join-Path $SampleDir "docs/architecture/overview.md"
 
-    # 4. Validate documentation
-    Write-Host "`n[4/4] Validating generated documentation against codebase AST..." -ForegroundColor Yellow
-    docagent validate docs/generated/orderService_ts.md
-
-    # Display generated output
-    $docPath = Join-Path $SampleDir "docs/generated/orderService_ts.md"
-    if (Test-Path $docPath) {
-        Write-Host "`n=== Generated Documentation Preview ===" -ForegroundColor Green
-        Get-Content $docPath | Select-Object -First 30
-        Write-Host "`nFull document saved to: $docPath" -ForegroundColor Cyan
+    if (Test-Path $readmePath) {
+        Write-Host "`n=== docs/README.md Preview ===" -ForegroundColor Cyan
+        Get-Content $readmePath | Select-Object -First 25
     }
+
+    if (Test-Path $overviewPath) {
+        Write-Host "`n=== docs/architecture/overview.md (with Mermaid Topology) ===" -ForegroundColor Cyan
+        Get-Content $overviewPath | Select-Object -First 25
+    }
+
+    Write-Host "`nAll 8 documentation files saved to: $(Join-Path $SampleDir 'docs')`n" -ForegroundColor Green
 }
 finally {
     Pop-Location
