@@ -95,7 +95,7 @@ export async function scanRepository(
             const fullPath = path.join(currentDirectory, entry.name);
 
             if (entry.isDirectory()) {
-                if (ignoredDirectories.has(entry.name)) {
+                if (ignoredDirectories.has(entry.name) || entry.name.startsWith("tests-temp")) {
                     continue;
                 }
 

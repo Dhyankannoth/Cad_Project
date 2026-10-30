@@ -1,0 +1,654 @@
+.doc-viewer-modern {
+    display: flex;
+    height: 100vh;
+    background: #050505;
+    /* Void Black */
+    color: #eee;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Sidebar Styling - Matching the image's professional look */
+.doc-sidebar {
+    width: 280px;
+    background: #050505;
+    /* Pure Void */
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1rem;
+    overflow-y: auto;
+}
+
+.category-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 0.15em;
+    padding: 0 0.75rem;
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+    text-transform: uppercase;
+}
+
+.nav-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    background: transparent;
+    border: none;
+    color: #999;
+    font-size: 0.85rem;
+    text-align: left;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
+}
+
+.nav-back-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-search {
+    position: relative;
+    padding: 0 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-search i {
+    position: absolute;
+    left: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.sidebar-search input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 0.45rem 1rem 0.45rem 2rem;
+    color: #eee;
+    font-size: 0.8rem;
+    outline: none;
+}
+
+.doc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    color: #999;
+    font-size: 0.85rem;
+    text-align: left;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    color: #eee;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-item.pending-doc {
+    opacity: 0.6;
+}
+
+.nav-item.has-doc {
+    opacity: 1;
+}
+
+.generating-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #008080;
+    border-radius: 50%;
+    margin-left: auto;
+    box-shadow: 0 0 8px rgba(0, 128, 128, 0.6);
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 0.2;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+.nav-item.active {
+    color: #fff;
+    font-weight: 600;
+    background: rgba(0, 128, 128, 0.05);
+}
+
+.nav-indicator {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: #008080;
+    /* Teal/Blue Accent */
+    border-radius: 0 2px 2px 0;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.nav-item.active .nav-indicator {
+    opacity: 1;
+}
+
+.nav-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 1rem 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.export-link {
+    background: transparent;
+    border: none;
+    color: #555;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.export-link:hover {
+    color: #008080;
+}
+
+/* Main Content Styling */
+.doc-main-region {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.doc-content {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    background: #131314;
+    /* Refined dark grey */
+    padding-bottom: 2rem;
+}
+
+.docs-continuous-scroll {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 4rem 3rem 10rem;
+}
+
+.doc-article {
+    margin-bottom: 8rem;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.doc-content-header {
+    margin-bottom: 3rem;
+}
+
+.doc-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #f0f6fc;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.doc-path-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: #008080;
+    display: block;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+}
+
+.doc-section {
+    margin-bottom: 3.5rem;
+    position: relative;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.section-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+.edit-toggle {
+    background: transparent;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.editable-region:hover .edit-toggle {
+    opacity: 1;
+}
+
+.edit-toggle:hover {
+    color: #008080;
+}
+
+/* Inline Editor Styling */
+.inline-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: editorFadeIn 0.3s ease-out;
+}
+
+@keyframes editorFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.inline-editor textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 128, 128, 0.2);
+    border-radius: 8px;
+    padding: 1.5rem;
+    color: #c9d1d9;
+    font-family: inherit;
+    line-height: 1.6;
+    outline: none;
+    resize: vertical;
+}
+
+.editor-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.editor-actions button {
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.editor-actions button:first-child {
+    background: #008080;
+    color: white;
+    border: none;
+}
+
+.editor-actions button:first-child:hover {
+    background: #009999;
+}
+
+.editor-actions button:last-child {
+    background: transparent;
+    color: #888;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.editor-actions button:last-child:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.markdown-body {
+    color: #8b949e;
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+.markdown-body p {
+    margin-bottom: 1.25rem;
+}
+
+.markdown-body pre {
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+}
+
+.markdown-body code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    color: #c9d1d9;
+}
+
+/* Function Cards Redesign - Flat style */
+.fn-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.fn-doc {
+    background: transparent;
+    padding: 0;
+    border: none;
+}
+
+.fn-doc h4 code {
+    font-size: 1.1rem;
+    color: #008080;
+    background: none;
+    padding: 0;
+}
+
+.fn-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.fn-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #555;
+    background: #0d1117;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.fn-tag strong {
+    color: #008080;
+    margin-right: 0.4rem;
+}
+
+.doc-separator {
+    border: none;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 5rem 0;
+}
+
+/* Edge cases - Refined styling */
+.edge-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.edge-list li {
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    color: #8b949e;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.edge-list li:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(0, 128, 128, 0.2);
+}
+
+.edge-list li::before {
+    content: '✦';
+    color: #008080;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Processing State */
+.processing-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 500px;
+    margin: 10rem auto;
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.doc-placeholder-icon.pulse {
+    font-size: 3rem;
+    filter: drop-shadow(0 0 15px rgba(0, 128, 128, 0.4));
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+.generation-progress {
+    width: 100%;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.progress-bar-flat {
+    width: 100%;
+    height: 3px;
+    background: #1d1d1f;
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.progress-fill-infinite {
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #008080, transparent);
+    animation: progress-slide 2s infinite linear;
+}
+
+@keyframes progress-slide {
+    from {
+        left: -50%;
+    }
+
+    to {
+        left: 100%;
+    }
+}
+
+/* AI Refinement Bar - Fixed at bottom of content area */
+.doc-refine-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem 3rem;
+    background: linear-gradient(to top, #131314 60%, transparent);
+    z-index: 10;
+    pointer-events: none;
+    /* Allow clicks through to content if not on the bar */
+}
+
+.doc-refine-bar {
+    max-width: 800px;
+    margin: 0 auto;
+    background: rgba(22, 22, 23, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50px;
+    padding: 0.5rem 0.5rem 0.5rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto;
+    /* Re-enable clicks for the actual bar */
+}
+
+.doc-refine-bar:focus-within {
+    border-color: rgba(0, 128, 128, 0.5);
+    box-shadow: 0 10px 40px rgba(0, 128, 128, 0.1);
+}
+
+.doc-refine-bar i {
+    color: #008080;
+    font-size: 1.2rem;
+}
+
+.doc-refine-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #eee;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.doc-refine-bar .refine-btn {
+    background: #008080;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+}
+
+.doc-refine-bar .refine-btn:hover {
+    background: #009999;
+    transform: translateY(-1px);
+}
+
+.doc-refine-bar .refine-btn.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+    .doc-refine-container {
+        padding: 1.5rem;
+    }
+
+    .doc-sidebar {
+        width: 60px;
+        padding: 2rem 0.5rem;
+    }
+
+    .category-label,
+    .nav-text,
+    .sidebar-search,
+    .sidebar-footer,
+    .nav-back-btn span {
+        display: none;
+    }
+}

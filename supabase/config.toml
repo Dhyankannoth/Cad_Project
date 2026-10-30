@@ -1,0 +1,35 @@
+
+[functions.dashboard-ai]
+enabled = true
+verify_jwt = false
+import_map = "./functions/dashboard-ai/deno.json"
+entrypoint = "./functions/dashboard-ai/index.ts"
+
+[functions.github-ingest]
+enabled = true
+verify_jwt = false
+
+[functions.analyze-project]
+enabled = true
+verify_jwt = false
+
+[functions.explain-module]
+enabled = true
+verify_jwt = false
+
+[functions.export-docs]
+enabled = true
+verify_jwt = false
+
+[functions.generate-docs]
+enabled = true
+verify_jwt = false
+
+[functions.process-change]
+enabled = true
+verify_jwt = false
+
+[functions.send-invite]
+enabled = true
+verify_jwt = false
+

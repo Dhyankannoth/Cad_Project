@@ -122,10 +122,52 @@ Commands:
 
 ---
 
-## 🧪 Testing
+## 🏗️ Monorepo Architecture
 
-Run the full automated test suite (36 tests) from the main directory:
+Chronodoc is organized as an npm monorepo with multiple specialized packages:
+
+```text
+Cad_Project/
+├── Chronodoc/
+│   └── packages/
+│       ├── agent/                 # CLI and AI Documentation Agent Core
+│       │   ├── src/
+│       │   └── dist/
+│       └── web/                   # Interactive Documentation Web GUI (React + Vite)
+│           ├── src/
+│           └── public/
+├── supabase/                      # PostgreSQL migrations & Edge Functions
+├── docs/                          # Architecture specs & decisions (ADR-001, AWS specs)
+├── how-to-use/                    # Hands-on demo & sample project
+└── .env.example                   # Unified environment configuration template
+```
+
+---
+
+## 💻 Web GUI Application (`packages/web`)
+
+The interactive web GUI provides a visual interface for managing repositories, previewing generated documentation, and inspecting AST graphs.
+
+### Running the Web GUI Locally:
 
 ```bash
+# 1. Start the Vite development server from repository root
+npm run dev:web
+
+# 2. Or build the production static bundle
+npm run build:web
+```
+
+The GUI will be accessible at `http://localhost:5173`. Make sure to configure your `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env` or `Chronodoc/packages/web/.env`.
+
+---
+
+## 🧪 Testing & Building
+
+```bash
+# Run the agent test suite
 npm test
+
+# Build all packages (CLI agent + Web GUI)
+npm run build
 ```
