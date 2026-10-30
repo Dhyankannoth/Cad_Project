@@ -1,0 +1,228 @@
+.changelog {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 2rem;
+    min-height: 500px;
+}
+
+.commit-list-panel {
+    background: rgba(13, 13, 13, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: 75vh;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.changelog .panel-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    color: var(--accent-color);
+    letter-spacing: -0.02em;
+}
+
+.no-commits {
+    color: var(--text-secondary);
+    font-weight: 300;
+    text-align: center;
+    padding: 3rem 0;
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.commit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.commit-item {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    text-align: left;
+    color: var(--text-secondary);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.commit-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    color: var(--text-primary);
+}
+
+.commit-item.active {
+    background: rgba(0, 128, 128, 0.12);
+    border-color: rgba(0, 128, 128, 0.3);
+    color: var(--text-primary);
+    box-shadow: 0 4px 20px rgba(0, 128, 128, 0.2);
+}
+
+.commit-msg {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.commit-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.commit-hash {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+}
+
+.commit-detail {
+    background: rgba(13, 13, 13, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 2.5rem;
+    overflow-y: auto;
+    max-height: 75vh;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.detail-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 300;
+    opacity: 0.5;
+    text-align: center;
+}
+
+.commit-header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.commit-header h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.full-hash {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    color: var(--accent-color);
+    background: rgba(0, 128, 128, 0.05);
+    border: 1px solid rgba(0, 128, 128, 0.2);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+}
+
+.change-section {
+    margin-bottom: 2rem;
+}
+
+.change-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.change-section p {
+    color: var(--text-secondary);
+    font-weight: 400;
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+.changed-files-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.changed-file,
+.affected-file {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    transition: all 0.2s ease;
+}
+
+.changed-file:hover,
+.affected-file:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.affected-file {
+    border-left: 3px solid var(--accent-color);
+}
+
+.risk-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    width: fit-content;
+    text-transform: capitalize;
+}
+
+.no-analysis {
+    color: var(--text-secondary);
+    font-weight: 300;
+    padding: 3rem 0;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 992px) {
+    .changelog {
+        grid-template-columns: 1fr;
+    }
+    
+    .commit-list-panel {
+        max-height: 400px;
+    }
+}

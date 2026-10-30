@@ -1,0 +1,160 @@
+{
+    "stagger": [
+        {
+            "id": 0,
+            "testimonial": "My favorite solution in the market. We work 5x faster with DOCFLOW.",
+            "by": "Alex, CEO at TechCorp",
+            "imgSrc": "https://i.pravatar.cc/150?img=1"
+        },
+        {
+            "id": 1,
+            "testimonial": "I'm confident my code docs are always fresh. Can't say that about other tools.",
+            "by": "Dan, CTO at SecureNet",
+            "imgSrc": "https://i.pravatar.cc/150?img=2"
+        },
+        {
+            "id": 2,
+            "testimonial": "We were drowning in stale docs before DOCFLOW. Can't thank you guys enough!",
+            "by": "Stephanie, COO at InnovateCo",
+            "imgSrc": "https://i.pravatar.cc/150?img=3"
+        },
+        {
+            "id": 3,
+            "testimonial": "DOCFLOW makes onboarding new engineers seamless. Can't recommend them enough!",
+            "by": "Marie, CFO at FuturePlanning",
+            "imgSrc": "https://i.pravatar.cc/150?img=4"
+        },
+        {
+            "id": 4,
+            "testimonial": "If I could give 11 stars, I'd give 12.",
+            "by": "Andre, Head of Design at CreativeSolutions",
+            "imgSrc": "https://i.pravatar.cc/150?img=5"
+        },
+        {
+            "id": 5,
+            "testimonial": "SO SO SO HAPPY WE FOUND YOU GUYS!!!! Saved me 100 hours so far.",
+            "by": "Jeremy, Product Manager at TimeWise",
+            "imgSrc": "https://i.pravatar.cc/150?img=6"
+        },
+        {
+            "id": 6,
+            "testimonial": "Took some convincing, but now that we're on DOCFLOW, we're never going back.",
+            "by": "Pam, Marketing Director at BrandBuilders",
+            "imgSrc": "https://i.pravatar.cc/150?img=7"
+        },
+        {
+            "id": 7,
+            "testimonial": "I would be lost without DOCFLOW's in-depth analytics. The ROI is EASILY 100X.",
+            "by": "Daniel, Data Scientist at AnalyticsPro",
+            "imgSrc": "https://i.pravatar.cc/150?img=8"
+        },
+        {
+            "id": 8,
+            "testimonial": "It's just the best documentation tool. Period.",
+            "by": "Fernando, UX Designer at UserFirst",
+            "imgSrc": "https://i.pravatar.cc/150?img=9"
+        },
+        {
+            "id": 9,
+            "testimonial": "I switched 5 years ago and never looked back.",
+            "by": "Andy, DevOps Engineer at CloudMasters",
+            "imgSrc": "https://i.pravatar.cc/150?img=10"
+        },
+        {
+            "id": 10,
+            "testimonial": "I've been searching for a solution like DOCFLOW for YEARS. So glad I found it!",
+            "by": "Pete, Sales Director at RevenueRockets",
+            "imgSrc": "https://i.pravatar.cc/150?img=11"
+        },
+        {
+            "id": 11,
+            "testimonial": "So simple and intuitive, we got the team up to speed in 10 minutes.",
+            "by": "Marina, HR Manager at TalentForge",
+            "imgSrc": "https://i.pravatar.cc/150?img=12"
+        },
+        {
+            "id": 12,
+            "testimonial": "DOCFLOW's customer support is unparalleled. Always there when we need them.",
+            "by": "Olivia, Success Manager at ClientCare",
+            "imgSrc": "https://i.pravatar.cc/150?img=13"
+        },
+        {
+            "id": 13,
+            "testimonial": "The efficiency gains since implementing DOCFLOW are off the charts!",
+            "by": "Raj, Operations Manager at StreamlineSolutions",
+            "imgSrc": "https://i.pravatar.cc/150?img=14"
+        },
+        {
+            "id": 14,
+            "testimonial": "DOCFLOW has revolutionized how we handle documentation. Game-changer!",
+            "by": "Lila, Workflow Specialist at ProcessPro",
+            "imgSrc": "https://i.pravatar.cc/150?img=15"
+        },
+        {
+            "id": 15,
+            "testimonial": "The scalability is impressive. It grows with our business seamlessly.",
+            "by": "Trevor, Scaling Officer at GrowthGurus",
+            "imgSrc": "https://i.pravatar.cc/150?img=16"
+        },
+        {
+            "id": 16,
+            "testimonial": "I appreciate how DOCFLOW continually innovates. Always one step ahead.",
+            "by": "Naomi, Innovation Lead at FutureTech",
+            "imgSrc": "https://i.pravatar.cc/150?img=17"
+        },
+        {
+            "id": 17,
+            "testimonial": "The ROI is incredible. It's paid for itself many times over.",
+            "by": "Victor, Finance Analyst at ProfitPeak",
+            "imgSrc": "https://i.pravatar.cc/150?img=18"
+        },
+        {
+            "id": 18,
+            "testimonial": "DOCFLOW's platform is robust yet easy to use. The perfect balance.",
+            "by": "Yuki, Tech Lead at BalancedTech",
+            "imgSrc": "https://i.pravatar.cc/150?img=19"
+        },
+        {
+            "id": 19,
+            "testimonial": "We've tried many tools, but DOCFLOW stands out in reliability and performance.",
+            "by": "Zoe, Performance Manager at ReliableSystems",
+            "imgSrc": "https://i.pravatar.cc/150?img=20"
+        }
+    ],
+    "marquee": [
+        {
+            "author": {
+                "name": "Emma Thompson",
+                "handle": "@emmaai",
+                "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
+            },
+            "text": "DOCFLOW revolutionized how we maintain our codebase docs. AI-generated documentation that actually stays up to date — game changer.",
+            "href": "https://twitter.com/emmaai"
+        },
+        {
+            "author": {
+                "name": "David Park",
+                "handle": "@davidtech",
+                "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+            },
+            "text": "The change intelligence feature is brilliant — it knows exactly which docs need updating when code changes. Zero manual work.",
+            "href": "https://twitter.com/davidtech"
+        },
+        {
+            "author": {
+                "name": "Sofia Rodriguez",
+                "handle": "@sofiaml",
+                "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face"
+            },
+            "text": "Finally, an AI tool that actually understands context! The accuracy in natural language processing is impressive."
+        },
+        {
+            "author": {
+                "name": "Omar Raza",
+                "handle": "@omarcto",
+                "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+            },
+            "text": "DOCFLOW's dependency graph helped us find orphan files and dead code we didn't even know existed. Incredible tool."
+        }
+    ]
+}

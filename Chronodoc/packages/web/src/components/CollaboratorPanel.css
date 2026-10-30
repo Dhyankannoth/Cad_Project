@@ -1,0 +1,328 @@
+.collab-panel {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+
+.collab-header {
+    margin-bottom: 2rem;
+}
+
+.collab-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.collab-title h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.collab-subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    margin-bottom: 1rem;
+}
+
+/* Invite Section */
+.invite-section {
+    background: #0a0a0a;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.invite-form {
+    display: flex;
+    gap: 1rem;
+}
+
+.input-group {
+    flex: 1;
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #555;
+}
+
+.input-group input {
+    width: 100%;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 0.7rem 1rem 0.7rem 2.5rem;
+    color: #fff;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #00f5a0;
+    box-shadow: 0 0 0 2px rgba(0, 245, 160, 0.1);
+}
+
+.invite-btn {
+    background: #00f5a0;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.invite-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.invite-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.collab-error {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 8px;
+    color: #ff6b6b;
+    font-size: 0.85rem;
+}
+
+/* Invite Code Display */
+.invite-code-display {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    background: rgba(0, 245, 160, 0.05);
+    border: 1px solid rgba(0, 245, 160, 0.2);
+    border-radius: 10px;
+}
+
+.code-label {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+.code-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.code-value {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: #00f5a0;
+}
+
+.copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    color: #aaa;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copy-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.code-hint {
+    margin: 0.75rem 0 0 0;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Members Section */
+.members-section {
+    background: #0a0a0a;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.member-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #111;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.member-row:hover {
+    background: #1a1a1a;
+}
+
+.member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00f5a0, #008080);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #000;
+    flex-shrink: 0;
+}
+
+.member-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.member-email {
+    font-size: 0.9rem;
+    color: #ddd;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.you-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    background: rgba(0, 245, 160, 0.15);
+    color: #00f5a0;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.member-role {
+    font-size: 0.75rem;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.remove-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #ff4d4d;
+}
+
+/* Pending Invites */
+.invites-section {
+    background: #0a0a0a;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.invites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.invite-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: #111;
+    border-radius: 8px;
+}
+
+.invite-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #aaa;
+    font-size: 0.85rem;
+}
+
+.invite-code-mini {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    background: rgba(0, 245, 160, 0.1);
+    color: #00f5a0;
+    border-radius: 4px;
+}
+
+.revoke-btn {
+    background: none;
+    border: 1px solid #333;
+    color: #888;
+    border-radius: 6px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.revoke-btn:hover {
+    border-color: #ff4d4d;
+    color: #ff4d4d;
+}
+
+@media (max-width: 640px) {
+    .invite-form {
+        flex-direction: column;
+    }
+
+    .code-value {
+        font-size: 1.25rem;
+    }
+}

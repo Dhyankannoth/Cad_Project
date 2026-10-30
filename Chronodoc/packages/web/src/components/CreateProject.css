@@ -1,0 +1,688 @@
+/* ===== Wizard Container ===== */
+.wizard-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== Step Indicator ===== */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 4rem;
+}
+
+.step-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    color: #555;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.step-dot.active {
+    border-color: var(--accent-color);
+    background: rgba(0, 128, 128, 0.15);
+    color: var(--accent-color);
+    box-shadow: 0 0 25px rgba(0, 128, 128, 0.25);
+}
+
+.step-dot.completed {
+    border-color: var(--accent-color);
+    background: var(--accent-color);
+    color: #fff;
+}
+
+.step-line {
+    width: 80px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.step-line.completed {
+    background: var(--accent-color);
+}
+
+.step-line.completed::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ===== Step Content Wrapper ===== */
+.step-content {
+    width: 100%;
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.step-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    text-align: center;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(to bottom, #fff, #888);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.step-subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    font-weight: 300;
+    margin-bottom: 3rem;
+    line-height: 1.6;
+}
+
+/* ===== Step 1: Source Selection Cards ===== */
+.source-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.source-card-lg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 3rem 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.source-card-lg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(0, 128, 128, 0.06), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.source-card-lg:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateY(-4px);
+}
+
+.source-card-lg:hover::before {
+    opacity: 1;
+}
+
+.source-card-lg.selected {
+    border-color: var(--accent-color);
+    background: rgba(0, 128, 128, 0.06);
+    box-shadow: 0 0 40px rgba(0, 128, 128, 0.12), inset 0 0 30px rgba(0, 128, 128, 0.03);
+}
+
+.source-card-lg.selected::before {
+    opacity: 1;
+}
+
+.source-icon-lg {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    transition: all 0.4s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.source-card-lg.selected .source-icon-lg {
+    color: var(--accent-color);
+    background: rgba(0, 128, 128, 0.1);
+    border-color: rgba(0, 128, 128, 0.3);
+    box-shadow: 0 0 20px rgba(0, 128, 128, 0.2);
+}
+
+.source-card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 1;
+}
+
+.source-card-desc {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.5;
+    max-width: 200px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== Step 2: Configuration ===== */
+.config-section {
+    width: 100%;
+}
+
+.github-input-wrapper {
+    position: relative;
+}
+
+.github-input-wrapper i {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.hero-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding: 1.25rem 1.5rem 1.25rem 3.25rem;
+    border-radius: 16px;
+    font-size: 1.05rem;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.hero-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 30px rgba(0, 128, 128, 0.1);
+}
+
+.hero-input::placeholder {
+    color: #333;
+}
+
+.input-hint-text {
+    display: block;
+    font-size: 0.8rem;
+    color: #444;
+    margin-top: 0.75rem;
+    padding-left: 0.5rem;
+}
+
+/* Premium Drop Zone */
+.drop-zone-premium {
+    border: 2px dashed rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 20px;
+    padding: 4rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.drop-zone-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center bottom, rgba(0, 128, 128, 0.04), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.drop-zone-premium:hover,
+.drop-zone-premium.drag-active {
+    border-color: var(--accent-color);
+    background: rgba(0, 128, 128, 0.03);
+    transform: scale(1.01);
+}
+
+.drop-zone-premium:hover::before,
+.drop-zone-premium.drag-active::before {
+    opacity: 1;
+}
+
+.drop-zone-icon {
+    font-size: 3rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    display: block;
+    position: relative;
+    z-index: 1;
+}
+
+.drop-zone-premium p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.drop-zone-hint {
+    font-size: 0.75rem;
+    color: #444;
+    position: relative;
+    z-index: 1;
+}
+
+/* File chips */
+.file-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.file-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    animation: fadeInUp 0.3s ease;
+}
+
+.file-chip button {
+    background: none;
+    color: #555;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.file-chip button:hover {
+    color: #ff4d4d;
+}
+
+.file-chip-more {
+    background: rgba(0, 128, 128, 0.08);
+    border-color: rgba(0, 128, 128, 0.15);
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.file-count-badge {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+/* ===== Step 3: Name & Launch ===== */
+.name-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.name-input-wrapper {
+    position: relative;
+}
+
+.name-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding: 1rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.name-input:focus {
+    border-bottom-color: var(--accent-color);
+}
+
+.name-input::placeholder {
+    color: #222;
+}
+
+.desc-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    resize: none;
+    min-height: 80px;
+    transition: border-color 0.3s ease;
+}
+
+.desc-input:focus {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.desc-input::placeholder {
+    color: #333;
+}
+
+/* ===== Navigation Buttons ===== */
+.wizard-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3rem;
+    width: 100%;
+}
+
+.wizard-nav-back {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.wizard-nav-back:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.wizard-nav-next {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--accent-color);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 0.9rem 2rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+}
+
+.wizard-nav-next:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 128, 128, 0.3);
+}
+
+.wizard-nav-next:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Launch Button (Step 3) */
+.launch-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, var(--accent-color), #006060);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 1.25rem 2rem;
+    border-radius: 16px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    margin-top: 2rem;
+}
+
+.launch-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.launch-btn:hover:not(:disabled)::before {
+    transform: translateX(100%);
+}
+
+.launch-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 128, 128, 0.35);
+}
+
+.launch-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.launch-btn.loading {
+    pointer-events: none;
+}
+
+/* ===== Error State ===== */
+.wizard-error {
+    color: #ff4d4d;
+    font-size: 0.85rem;
+    background: rgba(255, 77, 77, 0.08);
+    padding: 0.85rem 1.25rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 77, 77, 0.15);
+    margin-top: 1.5rem;
+    text-align: center;
+    animation: fadeInUp 0.3s ease;
+}
+
+/* ===== Modal Overlay (keep for non-inline mode) ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-container {
+    background: #0a0a0a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 0;
+    width: 100%;
+    max-width: 780px;
+    max-height: 95vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ===== Loading Overlay ===== */
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 2rem;
+    animation: fadeIn 0.4s ease;
+}
+
+.loading-visual {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 2.5rem;
+}
+
+.loading-circle {
+    position: absolute;
+    inset: 0;
+    border: 3px solid rgba(0, 128, 128, 0.1);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.loading-icon-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    animation: pulse 2s infinite;
+}
+
+.loading-stages {
+    width: 100%;
+    max-width: 320px;
+}
+
+.loading-stage-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    color: #444;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.loading-stage-item.active {
+    color: #fff;
+    transform: translateX(8px);
+}
+
+.loading-stage-item.completed {
+    color: var(--accent-color);
+}
+
+.stage-dot-mini {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.loading-stage-text {
+    font-weight: 500;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.9); }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .wizard-container {
+        padding: 2rem 1.25rem;
+    }
+
+    .step-title {
+        font-size: 1.75rem;
+    }
+
+    .source-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .source-card-lg {
+        padding: 2rem 1.5rem;
+    }
+
+    .name-input {
+        font-size: 1.5rem;
+    }
+
+    .step-line {
+        width: 40px;
+    }
+}
