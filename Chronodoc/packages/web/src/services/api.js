@@ -42,14 +42,10 @@ async function invokeFunction(functionName, body) {
                 }
             }
 
-            // Enhanced bypass logic: Include 403 and better condition matching
+            // Only trigger bypass if it is a Supabase client JWT issue, not an external GitHub error
             const isAuthIssue = 
-                detail.toLowerCase().includes('jwt') || 
-                detail.toLowerCase().includes('invalid token') || 
-                detail.toLowerCase().includes('401') ||
-                detail.toLowerCase().includes('403') ||
-                statusCode === 401 ||
-                statusCode === 403;
+                (detail.toLowerCase().includes('jwt') || detail.toLowerCase().includes('invalid token')) &&
+                !detail.toLowerCase().includes('github');
 
             if (isAuthIssue) {
                 console.log(`[Diagnostic] Auth issue detected (${statusCode}). Attempting manual fetch bypass for ${functionName}...`);
