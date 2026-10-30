@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import dns from "node:dns";
+try { dns.setDefaultResultOrder("ipv4first"); } catch {}
 import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
@@ -301,6 +303,7 @@ program
     .option("-r, --root <dir>", "Repository root directory", ".")
     .option("-o, --out <dir>", "Destination directory", "docs/generated")
     .option("-p, --provider <provider>", "LLM provider: gemini | openai | anthropic | mock")
+    .option("-m, --model <model>", "LLM model override (e.g. gemini-2.5-flash, gemini-3.5-flash, gpt-4o)")
     .option("-s, --style <style>", "Documentation style: developer-guide | api-reference | architecture-overview")
     .action(async (file, cmdOptions) => {
         const globalOpts = program.opts();
@@ -315,13 +318,29 @@ program
             cwd: process.cwd(),
             explicitRoot: cmdOptions.root === "." ? undefined : cmdOptions.root
         });
-        const config = loadConfig(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {});
+
+        const fullTarget = path.resolve(resolvedRoot, file);
+        if (fs.existsSync(fullTarget) && fs.statSync(fullTarget).isDirectory()) {
+            ui.printError({
+                operation: "Document Generation",
+                failure: `'${file}' is a directory, not a source file`,
+                reason: "DocAgent generates documentation for specific source files (e.g. .ts, .tsx, .js)",
+                nextAction: "Provide a specific file path, e.g. 'docagent generate src/index.ts'"
+            });
+            process.exit(1);
+        }
+
+        const config = loadConfig({
+            ...(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {}),
+            ...(cmdOptions.model ? { llmModel: cmdOptions.model } : {})
+        });
 
         const activeApiKey = config.llmProvider === "gemini"
             ? config.geminiApiKey
             : (config.llmProvider === "openai"
                 ? config.openaiApiKey
                 : (config.llmProvider === "anthropic" ? config.anthropicApiKey : undefined));
+
 
         if (!globalOpts.json) {
             ui.printHeader({
@@ -397,10 +416,15 @@ program
                 nextAction = `Set ${config.llmProvider.toUpperCase()}_API_KEY in your env/.env file or run with -p mock`;
             }
 
+            let reason = err.message;
+            if (err.cause?.message) {
+                reason = `${err.message} (${err.cause.message})`;
+            }
+
             ui.printError({
                 operation: "Document Generation",
                 failure: "Documentation pipeline failed",
-                reason: err.message,
+                reason,
                 nextAction
             });
 
