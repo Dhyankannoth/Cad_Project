@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import CreateProject from '../components/CreateProject';
 import { ingestProject, deleteProject, analyzeProject, dashboardAi } from '../services/api';
-import { Component as EtheralShadow } from '../components/ui/etheral-shadow';
+import AnoAI from '../components/ui/animated-shader-background';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -82,14 +82,9 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-page workspace-mode">
-            {/* Etheral Shadow Background */}
+            {/* Shader Background */}
             <div className="shader-bg">
-                <EtheralShadow
-                    color="rgba(128, 128, 128, 1)"
-                    animation={{ scale: 100, speed: 90 }}
-                    noise={{ opacity: 1, scale: 1.2 }}
-                    sizing="fill"
-                />
+                <AnoAI />
             </div>
 
             <header className="workspace-header">

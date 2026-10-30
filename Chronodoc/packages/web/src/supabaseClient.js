@@ -13,5 +13,11 @@ const isValidUrl = (url) => {
 };
 
 export const supabase = isValidUrl(supabaseUrl) && supabaseAnonKey && !supabaseAnonKey.includes('YOUR_SUPABASE')
-    ? createClient(supabaseUrl, supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            // Bypass Web LockManager deadlock in dev/Strict Mode
+            lock: async (name, acquireTimeout, fn) => await fn(),
+        }
+    })
     : null;
+
