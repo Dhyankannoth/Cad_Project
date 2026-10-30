@@ -11,7 +11,7 @@ mermaid.initialize({
     fontFamily: 'Inter, sans-serif',
 });
 
-const DocViewer = ({ projectId, onExit }) => {
+const DocViewer = ({ projectId, onExit, projectStatus: propStatus }) => {
     const { supabase } = useAuth();
     const [docs, setDocs] = useState([]);
     const [files, setFiles] = useState([]);
@@ -21,6 +21,12 @@ const DocViewer = ({ projectId, onExit }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isExporting, setIsExporting] = useState(false);
     
+    const [projectStatus, setProjectStatus] = useState(propStatus || null);
+
+    useEffect(() => {
+        if (propStatus) setProjectStatus(propStatus);
+    }, [propStatus]);
+    
     // Interactive State
     const [isRefining, setIsRefining] = useState(false);
     const [refinePrompt, setRefinePrompt] = useState('');
@@ -29,54 +35,98 @@ const DocViewer = ({ projectId, onExit }) => {
     const [isSaving, setIsSaving] = useState(false);
 
     const contentRef = useRef(null);
+    const isFetchingRef = useRef(false);
 
     const fetchData = async () => {
-        if (!supabase) return;
+        if (!supabase || isFetchingRef.current) return;
+        isFetchingRef.current = true;
         
-        // Fetch files for the project
-        const { data: fileData, error: fileErr } = await supabase
-            .from('files')
-            .select('id, file_path, file_name')
-            .eq('project_id', projectId)
-            .order('file_path');
+        try {
+            // Fetch files for the project
+            const { data: fileData, error: fileErr } = await supabase
+                .from('files')
+                .select('id, file_path, file_name')
+                .eq('project_id', projectId)
+                .order('file_path');
 
-        if (fileErr) {
-            console.error('Error fetching files:', fileErr);
-            return;
+            if (fileErr) {
+                console.error('Error fetching files:', fileErr);
+                return;
+            }
+
+            // Fetch documentation sections
+            const { data: docData, error: docErr } = await supabase
+                .from('documentation_sections')
+                .select('*')
+                .eq('project_id', projectId);
+
+            if (docErr) {
+                console.error('Error fetching docs:', docErr);
+                return;
+            }
+
+            // Fetch current project status
+            const { data: projData } = await supabase
+                .from('projects')
+                .select('status')
+                .eq('id', projectId)
+                .maybeSingle();
+
+            if (projData?.status) {
+                setProjectStatus(projData.status);
+            }
+
+            const currentFiles = fileData || [];
+            const currentDocs = (docData || []).map(doc => {
+                const matchedFile = currentFiles.find(f => f.id === doc.file_id);
+                return {
+                    ...doc,
+                    files: doc.files || matchedFile || { file_name: matchedFile?.file_name || 'Documentation', file_path: matchedFile?.file_path || '' }
+                };
+            });
+            
+            setFiles(currentFiles);
+            setDocs(currentDocs);
+            
+            if (currentFiles.length > 0) {
+                setSelectedId(prev => {
+                    if (prev) {
+                        const prevHasDoc = currentDocs.some(d => d.file_id === prev);
+                        if (prevHasDoc) return prev;
+                    }
+                    const firstWithDoc = currentFiles.find(f => currentDocs.some(d => d.file_id === f.id));
+                    return firstWithDoc?.id || prev || currentFiles[0].id;
+                });
+            }
+            
+            setLoading(false);
+
+            if (currentDocs.length > 0) {
+                // Wait for render, then parse mermaid
+                setTimeout(() => {
+                    mermaid.run({
+                        querySelector: '.language-mermaid',
+                    }).catch(e => console.error("Mermaid parsing error", e));
+                }, 100);
+            }
+        } finally {
+            isFetchingRef.current = false;
         }
-
-        // Fetch documentation sections
-        const { data: docData, error: docErr } = await supabase
-            .from('documentation_sections')
-            .select('*')
-            .eq('project_id', projectId);
-
-        if (docErr) {
-            console.error('Error fetching docs:', docErr);
-            return;
-        }
-
-        const currentFiles = fileData || [];
-        const currentDocs = docData || [];
-        
-        setFiles(currentFiles);
-        setDocs(currentDocs);
-        
-        if (currentFiles.length > 0 && !selectedId) {
-            // Find the first file that has docs, or just the first file
-            const firstWithDoc = currentFiles.find(f => currentDocs.some(d => d.file_id === f.id));
-            setSelectedId(firstWithDoc?.id || currentFiles[0].id);
-        }
-        
-        setLoading(false);
-
-        // Wait for render, then parse mermaid
-        setTimeout(() => {
-            mermaid.run({
-                querySelector: '.language-mermaid',
-            }).catch(e => console.error("Mermaid parsing error", e));
-        }, 100);
     };
+
+    // Auto-polling: automatically refresh data while documentation generation is in progress
+    useEffect(() => {
+        const isTerminal = projectStatus === 'ready' || projectStatus === 'error';
+        const isFullyDone = isTerminal && (docs.length > 0 || files.length === 0);
+
+        if (isFullyDone) return;
+
+        const intervalId = setInterval(() => {
+            fetchData();
+        }, 2000);
+
+        return () => clearInterval(intervalId);
+    }, [projectId, projectStatus, docs.length, files.length]);
 
     useEffect(() => {
         fetchData();
@@ -346,7 +396,13 @@ const DocViewer = ({ projectId, onExit }) => {
                                 <div className="progress-bar-flat">
                                     <div className="progress-fill-infinite"></div>
                                 </div>
-                                <span>Analyzing architecture & patterns</span>
+                                <span>
+                                    {projectStatus === 'analyzing'
+                                        ? 'Analyzing code structure & dependencies...'
+                                        : projectStatus?.startsWith('generating_docs')
+                                        ? 'Generating AI documentation sections...'
+                                        : 'Analyzing architecture & patterns...'}
+                                </span>
                             </div>
                         </div>
                     ) : (

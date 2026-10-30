@@ -1,0 +1,158 @@
+{
+  "generator": "docagent",
+  "generatorVersion": "1.0.0",
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-10-30T05:55:10.886Z",
+  "targetRepository": "sample-store-app",
+  "statistics": {
+    "filesScanned": 10,
+    "symbolsExtracted": 6,
+    "documentsPlanned": 8,
+    "documentsGenerated": 8,
+    "documentsCreated": 0,
+    "documentsUpdated": 2,
+    "documentsUnchanged": 6,
+    "preservedEdits": 0
+  },
+  "documents": [
+    {
+      "relPath": "README.md",
+      "title": "sample-store-app Documentation",
+      "status": "unchanged",
+      "sectionsCount": 4,
+      "referencesCount": 11
+    },
+    {
+      "relPath": "getting-started.md",
+      "title": "Getting Started",
+      "status": "unchanged",
+      "sectionsCount": 5,
+      "referencesCount": 5
+    },
+    {
+      "relPath": "architecture/overview.md",
+      "title": "Architecture Overview",
+      "status": "unchanged",
+      "sectionsCount": 3,
+      "referencesCount": 12
+    },
+    {
+      "relPath": "architecture/components.md",
+      "title": "Component Architecture",
+      "status": "unchanged",
+      "sectionsCount": 1,
+      "referencesCount": 2
+    },
+    {
+      "relPath": "architecture/data-flow.md",
+      "title": "Data Flow & Workflows",
+      "status": "unchanged",
+      "sectionsCount": 2,
+      "referencesCount": 8
+    },
+    {
+      "relPath": "guides/development.md",
+      "title": "Development Guide",
+      "status": "unchanged",
+      "sectionsCount": 2,
+      "referencesCount": 2
+    },
+    {
+      "relPath": "guides/testing.md",
+      "title": "Testing Guide",
+      "status": "updated",
+      "sectionsCount": 2,
+      "referencesCount": 2
+    },
+    {
+      "relPath": "guides/configuration.md",
+      "title": "Configuration Reference",
+      "status": "updated",
+      "sectionsCount": 2,
+      "referencesCount": 2
+    }
+  ],
+  "skipped": [
+    {
+      "relPath": "reference/api.md",
+      "reason": "No HTTP routes, REST endpoints, or server handlers detected in codebase."
+    },
+    {
+      "relPath": "reference/database.md",
+      "reason": "No database schemas, ORM models, migrations, or database client dependencies detected in codebase."
+    }
+  ],
+  "validation": {
+    "passed": true,
+    "blockingErrors": 0,
+    "warnings": 11,
+    "issues": [
+      {
+        "docRelPath": "README.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "README.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "getting-started.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "getting-started.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "getting-started.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "getting-started.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "getting-started.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "architecture/overview.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "guides/development.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "guides/development.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      },
+      {
+        "docRelPath": "guides/testing.md",
+        "type": "invalid_source_path",
+        "severity": "warning",
+        "message": "Referenced file path \"package.json\" not found in scanned repository"
+      }
+    ]
+  }
+}

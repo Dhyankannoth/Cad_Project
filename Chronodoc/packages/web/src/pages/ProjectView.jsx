@@ -140,9 +140,19 @@ const ProjectView = () => {
     if (loading) return <div className="page-loader"><div className="loader-ring"></div></div>;
     if (!project) return <div className="project-error"><h2>Project not found</h2><Link to="/dashboard">Back to Dashboard</Link></div>;
 
-    const isProcessing = project.status === 'analyzing' ||
-        project.status.startsWith('generating_docs') ||
-        project.status === 'updating';
+    const isProcessing = project?.status === 'analyzing' ||
+        project?.status?.startsWith('generating_docs') ||
+        project?.status === 'updating';
+
+    useEffect(() => {
+        if (!isProcessing) return;
+
+        const intervalId = setInterval(() => {
+            fetchProject();
+        }, 2500);
+
+        return () => clearInterval(intervalId);
+    }, [id, isProcessing]);
 
     // Presence avatars info
     const activeUsers = Object.values(presence).flat();
@@ -218,7 +228,7 @@ const ProjectView = () => {
             <div className="tab-content">
 
                 {activeTab === 'files' && <FileExplorer projectId={id} onExit={() => setActiveTab('overview')} />}
-                {activeTab === 'docs' && <DocViewer projectId={id} onExit={() => switchTab('files')} />}
+                {activeTab === 'docs' && <DocViewer projectId={id} onExit={() => navigate('/dashboard')} projectStatus={project?.status} />}
                 {activeTab === 'changes' && <ChangeLog projectId={id} />}
                 {activeTab === 'team' && <CollaboratorPanel projectId={id} userRole={userRole} />}
                 {activeTab === 'settings' && <WebhookSetup project={project} />}

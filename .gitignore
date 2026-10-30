@@ -43,4 +43,5 @@ docs/product/use-cases.md
 .agent/
 .agents/
 .claude/
-.continue/
+.continue/
+supabase/.temp/
