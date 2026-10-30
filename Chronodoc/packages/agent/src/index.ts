@@ -34,3 +34,12 @@ export * from "./validator/documentValidator.js";
 // Orchestration & Targeted Revision
 export * from "./orchestrator/revisionAgent.js";
 export * from "./orchestrator/pipelineOrchestrator.js";
+export * from "./orchestrator/repositoryDocOrchestrator.js";
+
+// Repository Documentation Architecture
+export * from "./planner/types.js";
+export * from "./planner/docPlanner.js";
+export * from "./generator/repoDocGenerator.js";
+export * from "./validator/repoDocValidator.js";
+export * from "./writer/safeFileWriter.js";
+export * from "./report/generationReport.js";

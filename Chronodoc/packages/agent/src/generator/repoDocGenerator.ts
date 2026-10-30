@@ -194,9 +194,13 @@ export class RepoDocGenerator {
         const diagramLines = ["```mermaid", "flowchart TD"];
         const componentNames: string[] = [];
 
-        for (const [name, sym] of scanIndex.symbols) {
-            if (sym.exported && (sym.kind === "class" || sym.kind === "interface")) {
-                componentNames.push(name);
+        for (const [name, symVal] of scanIndex.symbols) {
+            const symList = Array.isArray(symVal) ? symVal : [symVal];
+            for (const sym of symList) {
+                if (sym.exported && (sym.kind === "class" || sym.kind === "interface")) {
+                    componentNames.push(name);
+                    break;
+                }
             }
         }
 
@@ -212,10 +216,11 @@ export class RepoDocGenerator {
         }
         diagramLines.push("```");
 
-        const componentsList = Array.from(scanIndex.symbols.values())
+        const allSymbols = Array.from(scanIndex.symbols.values()).flatMap(v => Array.isArray(v) ? v : [v]);
+        const componentsList = allSymbols
             .filter(s => s.exported)
             .slice(0, 10)
-            .map(s => `- **\`${s.name}\`** (\`${s.kind}\`): Exported from \`${s.file}\``)
+            .map(s => `- **\`${s.name}\`** (\`${s.kind}\`): Exported from \`${s.filePath ?? (s as any).file}\``)
             .join("\n");
 
         return [
@@ -251,10 +256,14 @@ export class RepoDocGenerator {
 
         // Group symbols by file
         const fileGroups = new Map<string, Array<{ name: string; kind: string; signature?: string }>>();
-        for (const [name, sym] of scanIndex.symbols) {
-            const list = fileGroups.get(sym.file) ?? [];
-            list.push({ name: sym.name, kind: sym.kind, signature: sym.signature });
-            fileGroups.set(sym.file, list);
+        for (const [name, symVal] of scanIndex.symbols) {
+            const symList = Array.isArray(symVal) ? symVal : [symVal];
+            for (const sym of symList) {
+                const fPath = sym.filePath ?? (sym as any).file ?? "src/unknown.ts";
+                const list = fileGroups.get(fPath) ?? [];
+                list.push({ name: sym.name, kind: sym.kind, signature: sym.signature });
+                fileGroups.set(fPath, list);
+            }
         }
 
         const entries = Array.from(fileGroups.entries());
@@ -409,9 +418,10 @@ export class RepoDocGenerator {
     ): DocumentSection[] {
         const apiFiles = scanIndex.files.filter(f => /routes?\/|api|controller/i.test(f));
         const routeSymbols = Array.from(scanIndex.symbols.values())
-            .filter(s => s.exported && (/route|controller|handler|api/i.test(s.name) || /routes?\/|api\//i.test(s.file)));
+            .flatMap(v => Array.isArray(v) ? v : [v])
+            .filter(s => s.exported && (/route|controller|handler|api/i.test(s.name) || /routes?\/|api\//i.test(s.filePath ?? (s as any).file ?? "")));
 
-        const rows = routeSymbols.map(s => `| \`${s.name}\` | \`${s.kind}\` | \`${s.file}\` |`).join("\n");
+        const rows = routeSymbols.map(s => `| \`${s.name}\` | \`${s.kind}\` | \`${s.filePath ?? (s as any).file}\` |`).join("\n");
 
         return [
             {

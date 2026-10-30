@@ -259,9 +259,14 @@ export class DocPlanner {
         );
 
         const models: string[] = [];
-        for (const [name, sym] of scanIndex.symbols) {
-            if (/model|entity|schema|table/i.test(name) || /models?\/|entities\//i.test(sym.file)) {
-                models.push(name);
+        for (const [name, symVal] of scanIndex.symbols) {
+            const symList = Array.isArray(symVal) ? symVal : [symVal];
+            for (const sym of symList) {
+                const fPath = sym.filePath ?? (sym as any).file ?? "";
+                if (/model|entity|schema|table/i.test(name) || /models?\/|entities\//i.test(fPath)) {
+                    models.push(name);
+                    break;
+                }
             }
         }
 
@@ -293,9 +298,14 @@ export class DocPlanner {
         );
 
         const interfaces: string[] = [];
-        for (const [name, sym] of scanIndex.symbols) {
-            if (sym.exported && (/route|controller|handler|endpoint|api/i.test(name) || /routes?\/|controllers?\/|api\//i.test(sym.file))) {
-                interfaces.push(name);
+        for (const [name, symVal] of scanIndex.symbols) {
+            const symList = Array.isArray(symVal) ? symVal : [symVal];
+            for (const sym of symList) {
+                const fPath = sym.filePath ?? (sym as any).file ?? "";
+                if (sym.exported && (/route|controller|handler|endpoint|api/i.test(name) || /routes?\/|controllers?\/|api\//i.test(fPath))) {
+                    interfaces.push(name);
+                    break;
+                }
             }
         }
 

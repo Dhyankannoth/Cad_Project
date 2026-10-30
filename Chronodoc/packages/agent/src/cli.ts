@@ -7,6 +7,7 @@ import pc from "picocolors";
 import { Command } from "commander";
 import { scanRepository } from "./scanner/scanRepository.js";
 import { PipelineOrchestrator } from "./orchestrator/pipelineOrchestrator.js";
+import { RepositoryDocOrchestrator } from "./orchestrator/repositoryDocOrchestrator.js";
 import { loadConfig } from "./config/env.js";
 import { TerminalUI } from "./cli/ui.js";
 import { executeInitCommand, executeValidateCommand } from "./cli/commands.js";
@@ -298,14 +299,15 @@ program
 
 // 4. Generate Command (also default fallback)
 program
-    .command("generate <file>", { isDefault: true })
-    .description("Generate verified, grounded technical documentation for a target file")
+    .command("generate [target]", { isDefault: true })
+    .description("Generate verified, grounded technical documentation for a codebase or target file")
     .option("-r, --root <dir>", "Repository root directory", ".")
-    .option("-o, --out <dir>", "Destination directory", "docs/generated")
+    .option("-o, --out <dir>", "Destination directory (defaults to 'docs' for repository, 'docs/generated' for single file)")
     .option("-p, --provider <provider>", "LLM provider: gemini | openai | anthropic | mock")
     .option("-m, --model <model>", "LLM model override (e.g. gemini-2.5-flash, gemini-3.5-flash, gpt-4o)")
     .option("-s, --style <style>", "Documentation style: developer-guide | api-reference | architecture-overview")
-    .action(async (file, cmdOptions) => {
+    .option("-a, --all", "Generate comprehensive repository-wide documentation suite", false)
+    .action(async (target, cmdOptions) => {
         const globalOpts = program.opts();
         const ui = new TerminalUI({
             noColor: !globalOpts.color,
@@ -319,16 +321,9 @@ program
             explicitRoot: cmdOptions.root === "." ? undefined : cmdOptions.root
         });
 
-        const fullTarget = path.resolve(resolvedRoot, file);
-        if (fs.existsSync(fullTarget) && fs.statSync(fullTarget).isDirectory()) {
-            ui.printError({
-                operation: "Document Generation",
-                failure: `'${file}' is a directory, not a source file`,
-                reason: "DocAgent generates documentation for specific source files (e.g. .ts, .tsx, .js)",
-                nextAction: "Provide a specific file path, e.g. 'docagent generate src/index.ts'"
-            });
-            process.exit(1);
-        }
+        const fullTarget = target ? path.resolve(resolvedRoot, target) : null;
+        const isTargetDir = fullTarget ? (fs.existsSync(fullTarget) && fs.statSync(fullTarget).isDirectory()) : false;
+        const isRepoMode = !target || target === "." || cmdOptions.all || isTargetDir;
 
         const config = loadConfig({
             ...(cmdOptions.provider ? { llmProvider: cmdOptions.provider } : {}),
@@ -341,12 +336,110 @@ program
                 ? config.openaiApiKey
                 : (config.llmProvider === "anthropic" ? config.anthropicApiKey : undefined));
 
+        if (isRepoMode) {
+            const outDir = cmdOptions.out ?? "docs";
 
+            if (!globalOpts.json) {
+                ui.printHeader({
+                    project: path.basename(resolvedRoot),
+                    output: outDir,
+                    target: "Whole Repository Suite",
+                    provider: config.llmProvider
+                });
+            }
+
+            const repoOrchestrator = new RepositoryDocOrchestrator({
+                provider: config.llmProvider,
+                apiKey: activeApiKey,
+                model: config.llmModel,
+                tokenBudget: config.tokenBudget,
+                maxRevisionAttempts: config.maxRevisionAttempts,
+                onProgress: (event) => {
+                    if (globalOpts.json) return;
+                    if (event.status === "started") {
+                        ui.startStage(event.message);
+                    } else if (event.status === "completed") {
+                        ui.completeStage(event.message);
+                    } else if (event.status === "failed") {
+                        ui.failStage(event.message);
+                    }
+                }
+            });
+
+            try {
+                const result = await repoOrchestrator.execute({
+                    rootDir: resolvedRoot,
+                    outputDir: outDir
+                });
+
+                const duration = Date.now() - startTime;
+
+                if (globalOpts.json) {
+                    console.log(JSON.stringify({ status: result.status, result, durationMs: duration }, null, 2));
+                    process.exit(result.status === "error" ? 2 : 0);
+                }
+
+                ui.stopSpinner();
+
+                if (result.plan.skippedDocuments.length > 0) {
+                    result.plan.skippedDocuments.forEach(s => {
+                        ui.printWarning(`Skipped '${s.relPath}': ${s.reason}`);
+                    });
+                }
+
+                ui.printSummary({
+                    documentsCreated: result.writeReport.created.length + result.writeReport.updated.length,
+                    validationStatus: result.status === "success" ? "Passed" : "Warnings Present",
+                    outputDirectory: path.resolve(resolvedRoot, outDir),
+                    durationMs: duration,
+                    nextSteps: [
+                        `Review documentation starting at ${path.join(outDir, "README.md")}`,
+                        `Inspect generation metadata report at ${path.join(outDir, "metadata/generation-report.json")}`
+                    ]
+                });
+
+                process.exit(result.status === "error" ? 2 : 0);
+            } catch (err: any) {
+                ui.stopSpinner();
+                const duration = Date.now() - startTime;
+
+                if (globalOpts.json) {
+                    console.error(JSON.stringify({ status: "error", message: err.message, durationMs: duration }, null, 2));
+                    process.exit(1);
+                }
+
+                let nextAction = "Verify repository files and configuration";
+                if (err.message.includes("API key")) {
+                    nextAction = `Set ${config.llmProvider.toUpperCase()}_API_KEY in your env/.env file or run with -p mock`;
+                }
+
+                let reason = err.message;
+                if (err.cause?.message) {
+                    reason = `${err.message} (${err.cause.message})`;
+                }
+
+                ui.printError({
+                    operation: "Repository Documentation Generation",
+                    failure: "Documentation pipeline failed",
+                    reason,
+                    nextAction
+                });
+
+                if (globalOpts.verbose && err.stack) {
+                    ui.printDiagnostic(err.stack);
+                }
+
+                process.exit(1);
+            }
+        }
+
+        // Single-file generation mode
+        const singleOut = cmdOptions.out ?? "docs/generated";
         if (!globalOpts.json) {
             ui.printHeader({
                 project: path.basename(resolvedRoot),
-                output: cmdOptions.out,
-                target: file,
+                output: singleOut,
+                target: target || "file",
                 provider: config.llmProvider
             });
         }
@@ -371,12 +464,11 @@ program
 
         try {
             const result = await orchestrator.execute({
-                target: file,
+                target: target!,
                 rootDir: resolvedRoot,
                 style: cmdOptions.style,
-                outDir: cmdOptions.out
+                outDir: singleOut
             });
-
 
             const duration = Date.now() - startTime;
 
@@ -396,7 +488,7 @@ program
             ui.printSummary({
                 documentsCreated: result.savedFilePath ? 1 : 0,
                 validationStatus: result.status === "validated" ? "Passed" : "Unapproved Draft",
-                outputDirectory: result.savedFilePath ?? cmdOptions.out,
+                outputDirectory: result.savedFilePath ?? singleOut,
                 durationMs: duration,
                 nextSteps: result.savedFilePath ? [`Review ${result.savedFilePath}`] : undefined
             });

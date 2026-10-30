@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import fs from "node:fs/promises";
+import os from "node:os";
 import { SafeFileWriter } from "../../src/writer/safeFileWriter.js";
 import type { GeneratedDocument } from "../../src/generator/types.js";
 
-const testDocsDir = path.resolve("./tests-temp-docs-output");
+const testDocsDir = path.join(os.tmpdir(), "docagent-temp-docs-output-" + Date.now());
 
 test("SafeFileWriter writes documents atomically and skips unchanged files on regeneration", async () => {
     await fs.rm(testDocsDir, { recursive: true, force: true });

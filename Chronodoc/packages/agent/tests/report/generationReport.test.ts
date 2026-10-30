@@ -2,13 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import fs from "node:fs/promises";
+import os from "node:os";
 import { GenerationReportWriter } from "../../src/report/generationReport.js";
 import type { DocumentationPlan } from "../../src/planner/types.js";
 import type { GeneratedDocument } from "../../src/generator/types.js";
 import type { SuiteValidationResult } from "../../src/validator/repoDocValidator.js";
 import type { WriteReport } from "../../src/writer/safeFileWriter.js";
 
-const testMetadataDir = path.resolve("./tests-temp-report-output");
+const testMetadataDir = path.join(os.tmpdir(), "docagent-temp-report-output-" + Date.now());
 
 test("GenerationReportWriter generates detailed generation-report.json omitting all secrets", async () => {
     await fs.rm(testMetadataDir, { recursive: true, force: true });

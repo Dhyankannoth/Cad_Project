@@ -94,14 +94,16 @@ export class RepoDocValidator {
 
             // 5. Source File and AST Symbol References in Sections
             for (const section of doc.sections) {
+                if (!section.references || !Array.isArray(section.references)) continue;
                 for (const ref of section.references) {
+                    if (!ref || typeof ref !== "string") continue;
                     const normRef = this.normalizePosix(ref);
                     const looksLikeFile = normRef.includes("/") || /\.[a-z0-9]+$/i.test(normRef);
 
                     if (looksLikeFile) {
                         // Allow references to other docs or repo files
                         const isKnownDoc = knownDocPaths.has(normRef) || knownDocPaths.has(path.posix.normalize(path.posix.join(docDir, normRef)));
-                        const isKnownRepoFile = knownRepoFiles.has(normRef) || scanIndex.files.some(f => f.endsWith(normRef));
+                        const isKnownRepoFile = knownRepoFiles.has(normRef) || scanIndex.files.some(f => f.endsWith(normRef)) || normRef === "package.json" || normRef === "tsconfig.json";
 
                         if (!isKnownDoc && !isKnownRepoFile) {
                             issues.push({
@@ -142,6 +144,7 @@ export class RepoDocValidator {
     }
 
     private normalizePosix(filePath: string): string {
+        if (!filePath) return "";
         return filePath.replace(/\\/g, "/").replace(/^\.\//, "");
     }
 
