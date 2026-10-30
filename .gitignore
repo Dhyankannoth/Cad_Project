@@ -40,3 +40,7 @@ development-log
 docs/product/use-cases.md
 
 .superpowers
+.agent/
+.agents/
+.claude/
+.continue/
